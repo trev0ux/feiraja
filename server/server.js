@@ -10,7 +10,7 @@ const { v4: uuidv4 } = require('uuid')
 
 const app = express()
 const PORT = process.env.PORT || 3002
-const JWT_SECRET = 'your-secret-key-change-in-production'
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
 
 // Middleware
 app.use(cors())
