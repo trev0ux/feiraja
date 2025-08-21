@@ -59,6 +59,9 @@
 - File upload for product images
 - Category management
 - Product management with categories
+- Product origin and traceability information
+- Nutritional information display
+- Enhanced admin form for complete product details
 - Box pricing configuration
 - Address management with default address support
 - In-memory database (replace with real DB in production)

@@ -121,6 +121,178 @@
         </div>
       </div>
 
+      <!-- Origin Information -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Informações de Origem</h3>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div>
+            <label for="producer" class="block text-sm font-medium text-gray-700 mb-1">
+              Produtor
+            </label>
+            <input
+              id="producer"
+              v-model="form.origin.producer"
+              type="text"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-aux-orange focus:border-aux-orange"
+              placeholder="Ex: Fazenda São João"
+            />
+          </div>
+
+          <div>
+            <label for="location" class="block text-sm font-medium text-gray-700 mb-1">
+              Localização
+            </label>
+            <input
+              id="location"
+              v-model="form.origin.location"
+              type="text"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-aux-orange focus:border-aux-orange"
+              placeholder="Ex: Ibiúna, São Paulo"
+            />
+          </div>
+
+          <div>
+            <label for="distance" class="block text-sm font-medium text-gray-700 mb-1">
+              Distância
+            </label>
+            <input
+              id="distance"
+              v-model="form.origin.distance"
+              type="text"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-aux-orange focus:border-aux-orange"
+              placeholder="Ex: 45 km de São Paulo"
+            />
+          </div>
+
+          <div>
+            <label for="harvestDate" class="block text-sm font-medium text-gray-700 mb-1">
+              Data da Colheita
+            </label>
+            <input
+              id="harvestDate"
+              v-model="form.origin.harvestDate"
+              type="date"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-aux-orange focus:border-aux-orange"
+            />
+          </div>
+
+          <div class="lg:col-span-2">
+            <label for="certifications" class="block text-sm font-medium text-gray-700 mb-1">
+              Certificações
+            </label>
+            <input
+              id="certifications"
+              v-model="certificationsInput"
+              type="text"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-aux-orange focus:border-aux-orange"
+              placeholder="Ex: Orgânico IBD, Selo SisOrg (separar por vírgula)"
+            />
+            <p class="text-xs text-gray-500 mt-1">Separe múltiplas certificações por vírgula</p>
+          </div>
+
+          <div class="lg:col-span-2">
+            <label for="story" class="block text-sm font-medium text-gray-700 mb-1">
+              História do Produtor
+            </label>
+            <textarea
+              id="story"
+              v-model="form.origin.story"
+              rows="4"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-aux-orange focus:border-aux-orange resize-none"
+              placeholder="Conte a história do produtor, métodos de cultivo, tradições familiares..."
+            ></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Nutritional Information -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Informações Nutricionais</h3>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          <div>
+            <label for="portion" class="block text-sm font-medium text-gray-700 mb-1">
+              Porção
+            </label>
+            <input
+              id="portion"
+              v-model="form.nutritionalInfo.portion"
+              type="text"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-aux-orange focus:border-aux-orange"
+              placeholder="Ex: 100g"
+            />
+          </div>
+
+          <div>
+            <label for="calories" class="block text-sm font-medium text-gray-700 mb-1">
+              Calorias
+            </label>
+            <input
+              id="calories"
+              v-model.number="form.nutritionalInfo.calories"
+              type="number"
+              min="0"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-aux-orange focus:border-aux-orange"
+              placeholder="Ex: 18"
+            />
+          </div>
+
+          <div>
+            <label for="carbs" class="block text-sm font-medium text-gray-700 mb-1">
+              Carboidratos
+            </label>
+            <input
+              id="carbs"
+              v-model="form.nutritionalInfo.carbs"
+              type="text"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-aux-orange focus:border-aux-orange"
+              placeholder="Ex: 3.9g"
+            />
+          </div>
+
+          <div>
+            <label for="fiber" class="block text-sm font-medium text-gray-700 mb-1">
+              Fibras
+            </label>
+            <input
+              id="fiber"
+              v-model="form.nutritionalInfo.fiber"
+              type="text"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-aux-orange focus:border-aux-orange"
+              placeholder="Ex: 1.2g"
+            />
+          </div>
+
+          <div>
+            <label for="protein" class="block text-sm font-medium text-gray-700 mb-1">
+              Proteína
+            </label>
+            <input
+              id="protein"
+              v-model="form.nutritionalInfo.protein"
+              type="text"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-aux-orange focus:border-aux-orange"
+              placeholder="Ex: 0.9g"
+            />
+          </div>
+
+          <div class="lg:col-span-3">
+            <label for="vitamins" class="block text-sm font-medium text-gray-700 mb-1">
+              Vitaminas e Minerais
+            </label>
+            <input
+              id="vitamins"
+              v-model="vitaminsInput"
+              type="text"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-aux-orange focus:border-aux-orange"
+              placeholder="Ex: Vitamina C, Licopeno, Potássio (separar por vírgula)"
+            />
+            <p class="text-xs text-gray-500 mt-1">Separe múltiplas vitaminas/minerais por vírgula</p>
+          </div>
+        </div>
+      </div>
+
       <!-- Image Upload -->
       <div class="bg-white rounded-lg shadow p-6">
         <h3 class="text-lg font-medium text-gray-900 mb-4">Imagem do Produto</h3>
@@ -242,12 +414,47 @@ const form = ref({
   description: '',
   price: '',
   categoryId: '',
-  inStock: true
+  inStock: true,
+  origin: {
+    producer: '',
+    location: '',
+    distance: '',
+    harvestDate: '',
+    certifications: [],
+    story: ''
+  },
+  nutritionalInfo: {
+    portion: '',
+    calories: null,
+    carbs: '',
+    fiber: '',
+    protein: '',
+    vitamins: []
+  }
 })
 
 const currentImage = ref('')
 const imagePreview = ref('')
 const selectedFile = ref(null)
+
+// Computed properties for array inputs
+const certificationsInput = computed({
+  get: () => form.value.origin.certifications.join(', '),
+  set: (value) => {
+    form.value.origin.certifications = value 
+      ? value.split(',').map(item => item.trim()).filter(item => item)
+      : []
+  }
+})
+
+const vitaminsInput = computed({
+  get: () => form.value.nutritionalInfo.vitamins.join(', '),
+  set: (value) => {
+    form.value.nutritionalInfo.vitamins = value 
+      ? value.split(',').map(item => item.trim()).filter(item => item)
+      : []
+  }
+})
 
 // Fetch categories
 const fetchCategories = async () => {
@@ -275,7 +482,23 @@ const fetchProduct = async () => {
         description: product.description,
         price: product.price,
         categoryId: product.categoryId,
-        inStock: product.inStock
+        inStock: product.inStock,
+        origin: {
+          producer: product.origin?.producer || '',
+          location: product.origin?.location || '',
+          distance: product.origin?.distance || '',
+          harvestDate: product.origin?.harvestDate || '',
+          certifications: product.origin?.certifications || [],
+          story: product.origin?.story || ''
+        },
+        nutritionalInfo: {
+          portion: product.nutritionalInfo?.portion || '',
+          calories: product.nutritionalInfo?.calories || null,
+          carbs: product.nutritionalInfo?.carbs || '',
+          fiber: product.nutritionalInfo?.fiber || '',
+          protein: product.nutritionalInfo?.protein || '',
+          vitamins: product.nutritionalInfo?.vitamins || []
+        }
       }
       
       if (product.image) {
@@ -357,6 +580,22 @@ const saveProduct = async () => {
     formData.append('price', form.value.price)
     formData.append('categoryId', form.value.categoryId)
     formData.append('inStock', form.value.inStock)
+    
+    // Add origin information
+    if (form.value.origin.producer) formData.append('origin.producer', form.value.origin.producer)
+    if (form.value.origin.location) formData.append('origin.location', form.value.origin.location)
+    if (form.value.origin.distance) formData.append('origin.distance', form.value.origin.distance)
+    if (form.value.origin.harvestDate) formData.append('origin.harvestDate', form.value.origin.harvestDate)
+    if (form.value.origin.certifications.length) formData.append('origin.certifications', JSON.stringify(form.value.origin.certifications))
+    if (form.value.origin.story) formData.append('origin.story', form.value.origin.story)
+    
+    // Add nutritional information
+    if (form.value.nutritionalInfo.portion) formData.append('nutritionalInfo.portion', form.value.nutritionalInfo.portion)
+    if (form.value.nutritionalInfo.calories !== null) formData.append('nutritionalInfo.calories', form.value.nutritionalInfo.calories)
+    if (form.value.nutritionalInfo.carbs) formData.append('nutritionalInfo.carbs', form.value.nutritionalInfo.carbs)
+    if (form.value.nutritionalInfo.fiber) formData.append('nutritionalInfo.fiber', form.value.nutritionalInfo.fiber)
+    if (form.value.nutritionalInfo.protein) formData.append('nutritionalInfo.protein', form.value.nutritionalInfo.protein)
+    if (form.value.nutritionalInfo.vitamins.length) formData.append('nutritionalInfo.vitamins', JSON.stringify(form.value.nutritionalInfo.vitamins))
     
     if (selectedFile.value) {
       formData.append('image', selectedFile.value)

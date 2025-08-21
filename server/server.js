@@ -61,21 +61,79 @@ let database = {
     {
       id: 1,
       name: 'Tomate Orgânico',
-      description: 'Tomate fresco da fazenda',
+      description: 'Tomate fresco da fazenda, cultivado sem agrotóxicos',
       price: 4.5,
       categoryId: 2,
       image: null,
       inStock: true,
+      origin: {
+        producer: 'Fazenda São João',
+        location: 'Ibiúna, São Paulo',
+        distance: '45 km de São Paulo',
+        harvestDate: '2025-08-20',
+        certifications: ['Orgânico IBD', 'Selo SisOrg'],
+        story: 'A Fazenda São João é uma propriedade familiar que há 3 gerações se dedica ao cultivo orgânico. Nossos tomates são cultivados em estufas com sistema de irrigação por gotejamento, garantindo o máximo aproveitamento da água.'
+      },
+      nutritionalInfo: {
+        portion: '100g',
+        calories: 18,
+        carbs: '3.9g',
+        fiber: '1.2g',
+        protein: '0.9g',
+        vitamins: ['Vitamina C', 'Licopeno', 'Potássio']
+      },
       createdAt: new Date(),
     },
     {
       id: 2,
       name: 'Banana Prata',
-      description: 'Banana madura e doce',
+      description: 'Banana madura e doce, cultivada naturalmente',
       price: 2.8,
       categoryId: 1,
       image: null,
       inStock: true,
+      origin: {
+        producer: 'Sítio Frutas do Vale',
+        location: 'Registro, São Paulo',
+        distance: '180 km de São Paulo',
+        harvestDate: '2025-08-19',
+        certifications: ['Produção Sustentável'],
+        story: 'O Sítio Frutas do Vale cultiva bananas há mais de 20 anos no Vale do Ribeira. Utilizamos técnicas de agricultura regenerativa que preservam o solo e promovem a biodiversidade local.'
+      },
+      nutritionalInfo: {
+        portion: '100g',
+        calories: 89,
+        carbs: '22.8g',
+        fiber: '2.6g',
+        protein: '1.1g',
+        vitamins: ['Potássio', 'Vitamina B6', 'Vitamina C']
+      },
+      createdAt: new Date(),
+    },
+    {
+      id: 3,
+      name: 'Arroz Integral',
+      description: 'Arroz integral orgânico, fonte de fibras',
+      price: 8.5,
+      categoryId: 3,
+      image: null,
+      inStock: true,
+      origin: {
+        producer: 'Cooperativa Terra Rica',
+        location: 'Eldorado, São Paulo',
+        distance: '220 km de São Paulo',
+        harvestDate: '2025-07-15',
+        certifications: ['Orgânico IBD', 'Fair Trade'],
+        story: 'A Cooperativa Terra Rica reúne 15 famílias de pequenos produtores que trabalham juntas para produzir arroz integral de alta qualidade, respeitando os ciclos naturais e preservando as nascentes da região.'
+      },
+      nutritionalInfo: {
+        portion: '100g',
+        calories: 123,
+        carbs: '23g',
+        fiber: '1.8g',
+        protein: '2.6g',
+        vitamins: ['Magnésio', 'Selênio', 'Manganês']
+      },
       createdAt: new Date(),
     },
   ],
@@ -309,6 +367,36 @@ app.post('/api/admin/products', authenticateToken, upload.single('image'), (req,
       return res.status(400).json({ error: 'Invalid category' })
     }
 
+    // Parse origin information
+    const origin = {}
+    if (req.body['origin.producer']) origin.producer = req.body['origin.producer']
+    if (req.body['origin.location']) origin.location = req.body['origin.location']
+    if (req.body['origin.distance']) origin.distance = req.body['origin.distance']
+    if (req.body['origin.harvestDate']) origin.harvestDate = req.body['origin.harvestDate']
+    if (req.body['origin.certifications']) {
+      try {
+        origin.certifications = JSON.parse(req.body['origin.certifications'])
+      } catch (e) {
+        origin.certifications = []
+      }
+    }
+    if (req.body['origin.story']) origin.story = req.body['origin.story']
+
+    // Parse nutritional information
+    const nutritionalInfo = {}
+    if (req.body['nutritionalInfo.portion']) nutritionalInfo.portion = req.body['nutritionalInfo.portion']
+    if (req.body['nutritionalInfo.calories']) nutritionalInfo.calories = parseInt(req.body['nutritionalInfo.calories'])
+    if (req.body['nutritionalInfo.carbs']) nutritionalInfo.carbs = req.body['nutritionalInfo.carbs']
+    if (req.body['nutritionalInfo.fiber']) nutritionalInfo.fiber = req.body['nutritionalInfo.fiber']
+    if (req.body['nutritionalInfo.protein']) nutritionalInfo.protein = req.body['nutritionalInfo.protein']
+    if (req.body['nutritionalInfo.vitamins']) {
+      try {
+        nutritionalInfo.vitamins = JSON.parse(req.body['nutritionalInfo.vitamins'])
+      } catch (e) {
+        nutritionalInfo.vitamins = []
+      }
+    }
+
     const newProduct = {
       id: Math.max(...database.products.map(p => p.id), 0) + 1,
       name,
@@ -317,6 +405,8 @@ app.post('/api/admin/products', authenticateToken, upload.single('image'), (req,
       categoryId: parseInt(categoryId),
       image: req.file ? `/uploads/${req.file.filename}` : null,
       inStock: inStock !== 'false',
+      origin: Object.keys(origin).length > 0 ? origin : undefined,
+      nutritionalInfo: Object.keys(nutritionalInfo).length > 0 ? nutritionalInfo : undefined,
       createdAt: new Date(),
     }
 
@@ -351,6 +441,36 @@ app.put('/api/admin/products/:id', authenticateToken, upload.single('image'), (r
       }
     }
 
+    // Parse origin information
+    const origin = { ...database.products[productIndex].origin }
+    if (req.body['origin.producer'] !== undefined) origin.producer = req.body['origin.producer']
+    if (req.body['origin.location'] !== undefined) origin.location = req.body['origin.location']
+    if (req.body['origin.distance'] !== undefined) origin.distance = req.body['origin.distance']
+    if (req.body['origin.harvestDate'] !== undefined) origin.harvestDate = req.body['origin.harvestDate']
+    if (req.body['origin.certifications'] !== undefined) {
+      try {
+        origin.certifications = JSON.parse(req.body['origin.certifications'])
+      } catch (e) {
+        origin.certifications = []
+      }
+    }
+    if (req.body['origin.story'] !== undefined) origin.story = req.body['origin.story']
+
+    // Parse nutritional information
+    const nutritionalInfo = { ...database.products[productIndex].nutritionalInfo }
+    if (req.body['nutritionalInfo.portion'] !== undefined) nutritionalInfo.portion = req.body['nutritionalInfo.portion']
+    if (req.body['nutritionalInfo.calories'] !== undefined) nutritionalInfo.calories = parseInt(req.body['nutritionalInfo.calories'])
+    if (req.body['nutritionalInfo.carbs'] !== undefined) nutritionalInfo.carbs = req.body['nutritionalInfo.carbs']
+    if (req.body['nutritionalInfo.fiber'] !== undefined) nutritionalInfo.fiber = req.body['nutritionalInfo.fiber']
+    if (req.body['nutritionalInfo.protein'] !== undefined) nutritionalInfo.protein = req.body['nutritionalInfo.protein']
+    if (req.body['nutritionalInfo.vitamins'] !== undefined) {
+      try {
+        nutritionalInfo.vitamins = JSON.parse(req.body['nutritionalInfo.vitamins'])
+      } catch (e) {
+        nutritionalInfo.vitamins = []
+      }
+    }
+
     const updatedProduct = {
       ...database.products[productIndex],
       name: name || database.products[productIndex].name,
@@ -360,6 +480,8 @@ app.put('/api/admin/products/:id', authenticateToken, upload.single('image'), (r
       categoryId: categoryId ? parseInt(categoryId) : database.products[productIndex].categoryId,
       inStock:
         inStock !== undefined ? inStock !== 'false' : database.products[productIndex].inStock,
+      origin: Object.keys(origin).length > 0 ? origin : undefined,
+      nutritionalInfo: Object.keys(nutritionalInfo).length > 0 ? nutritionalInfo : undefined,
       updatedAt: new Date(),
     }
 
