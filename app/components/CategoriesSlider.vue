@@ -26,8 +26,8 @@ const categories = ref([
 // Fetch categories from API
 const fetchCategories = async () => {
   try {
-    const { $config } = useNuxtApp()
-    const apiCategories = await $fetch(`${$config.public.apiBaseUrl}/api/categories`)
+    const { apiCall } = useApi()
+    const apiCategories = await apiCall('/api/categories')
     categories.value = [
       { id: 0, name: 'Todas', active: true },
       ...apiCategories.map(cat => ({ ...cat, active: false }))

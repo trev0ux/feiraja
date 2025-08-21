@@ -195,8 +195,8 @@ const fetchProducts = async () => {
       params.append('search', searchTerm.value)
     }
 
-    const { $config } = useNuxtApp()
-    const response = await $fetch(`${$config.public.apiBaseUrl}/api/products?${params}`)
+    const { apiCall } = useApi()
+    const response = await apiCall(`/api/products?${params}`)
     allProducts.value = response.products
   } catch (error) {
     console.error('Error fetching products:', error)
