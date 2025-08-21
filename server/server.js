@@ -739,6 +739,23 @@ app.patch('/api/admin/addresses/:id/default', authenticateToken, (req, res) => {
   }
 })
 
+// Health check endpoint
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'Feiraja API is running!', 
+    status: 'ok',
+    timestamp: new Date().toISOString()
+  })
+})
+
+app.get('/health', (req, res) => {
+  res.json({ 
+    message: 'Feiraja API is healthy!', 
+    status: 'ok',
+    timestamp: new Date().toISOString()
+  })
+})
+
 // Start server
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
