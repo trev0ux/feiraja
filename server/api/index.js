@@ -9,7 +9,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-producti
 
 // Middleware
 app.use(cors({
-  origin: ['https://feiraja-inb8kgchi-trev0uxs-projects.vercel.app', 'http://localhost:3000'],
+  origin: ['https://feiraja-l8vdi8u83-trev0uxs-projects.vercel.app', 'https://feiraja-inb8kgchi-trev0uxs-projects.vercel.app', 'http://localhost:3000'],
   credentials: true
 }))
 app.use(bodyParser.json())
