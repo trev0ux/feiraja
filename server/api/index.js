@@ -9,7 +9,21 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-producti
 
 // Middleware
 app.use(cors({
-  origin: ['https://feiraja.vercel.app', 'https://feiraja-1t5rwuape-trev0uxs-projects.vercel.app', 'http://localhost:3000'],
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    // Allow localhost for development
+    if (origin.includes('localhost')) return callback(null, true);
+    
+    // Allow all Vercel deployments for this project
+    if (origin.includes('feiraja') && origin.includes('vercel.app')) {
+      return callback(null, true);
+    }
+    
+    // Reject all other origins
+    callback(new Error('Not allowed by CORS'));
+  },
   credentials: true
 }))
 app.use(bodyParser.json())
