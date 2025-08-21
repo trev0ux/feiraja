@@ -740,7 +740,11 @@ app.patch('/api/admin/addresses/:id/default', authenticateToken, (req, res) => {
 })
 
 // Start server
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`)
-  console.log(`API available at http://localhost:${PORT}/api`)
-})
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`)
+    console.log(`API available at http://localhost:${PORT}/api`)
+  })
+}
+
+module.exports = app
