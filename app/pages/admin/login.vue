@@ -145,6 +145,8 @@ const showPassword = ref(false)
 const isLoading = ref(false)
 const error = ref('')
 
+const { apiCall } = useApi()
+
 const handleLogin = async () => {
   if (isLoading.value) return
 
@@ -152,8 +154,7 @@ const handleLogin = async () => {
   error.value = ''
 
   try {
-    const { $config } = useNuxtApp()
-    const response = await $fetch(`${$config.public.apiBaseUrl}/api/admin/login`, {
+    const response = await apiCall('/api/admin/login', {
       method: 'POST',
       body: {
         username: form.value.username,

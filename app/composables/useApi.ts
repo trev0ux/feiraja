@@ -11,7 +11,13 @@ export const useApi = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        ...options
+        credentials: 'include',
+        mode: 'cors',
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          ...options.headers
+        }
       }
 
       return await $fetch(url, defaultOptions)
@@ -21,8 +27,19 @@ export const useApi = () => {
     }
   }
 
+  const apiCallWithAuth = async (endpoint: string, token: string, options: any = {}) => {
+    return apiCall(endpoint, {
+      ...options,
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        ...options.headers
+      }
+    })
+  }
+
   return {
     apiCall,
+    apiCallWithAuth,
     apiBaseUrl
   }
 }

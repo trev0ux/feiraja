@@ -8,30 +8,34 @@ import bcrypt from 'bcryptjs'
 const app = express()
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
 
-// Custom CORS middleware
-const allowCrossDomain = (req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*')
-  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
-  res.header('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With')
-  res.header('Access-Control-Allow-Credentials', 'true')
-  
-  if (req.method === 'OPTIONS') {
-    res.status(200).end()
-    return
-  }
-  next()
+// CORS configuration
+const corsOptions = {
+  origin: function (origin, callback) {
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'http://localhost:3001', 
+      'http://localhost:3002',
+      'https://feiraja.vercel.app',
+      'https://server-omega-azure-57.vercel.app'
+    ]
+    
+    // Allow requests with no origin (mobile apps, etc.)
+    if (!origin) return callback(null, true)
+    
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true)
+    } else {
+      callback(new Error('Not allowed by CORS'))
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  optionsSuccessStatus: 200
 }
 
 // Middleware
-app.use(allowCrossDomain)
-app.use(
-  cors({
-    origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'https://feiraja.vercel.app'],
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  })
-)
+app.use(cors(corsOptions))
 app.use(bodyParser.json())
 
 // In-memory database (replace with real database in production)
@@ -199,6 +203,50 @@ const authenticateToken = (req, res, next) => {
     next()
   })
 }
+
+// JWT TOKEN GENERATION ROUTE
+app.post('/api/generate-token', (req, res) => {
+  try {
+    const { payload, expiresIn = '24h' } = req.body
+
+    if (!payload) {
+      return res.status(400).json({ error: 'Payload is required' })
+    }
+
+    const token = jwt.sign(payload, JWT_SECRET, { expiresIn })
+
+    res.json({
+      token,
+      expiresIn,
+      payload
+    })
+  } catch (error) {
+    res.status(500).json({ error: 'Token generation failed' })
+  }
+})
+
+// JWT TOKEN VERIFICATION ROUTE
+app.post('/api/verify-token', (req, res) => {
+  try {
+    const { token } = req.body
+
+    if (!token) {
+      return res.status(400).json({ error: 'Token is required' })
+    }
+
+    const decoded = jwt.verify(token, JWT_SECRET)
+    
+    res.json({
+      valid: true,
+      payload: decoded
+    })
+  } catch (error) {
+    res.status(401).json({ 
+      valid: false, 
+      error: 'Invalid or expired token' 
+    })
+  }
+})
 
 // AUTH ROUTES
 app.post('/api/admin/login', async (req, res) => {
