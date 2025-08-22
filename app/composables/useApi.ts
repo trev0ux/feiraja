@@ -11,7 +11,6 @@ export const useApi = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include',
         mode: 'cors',
         ...options,
         headers: {

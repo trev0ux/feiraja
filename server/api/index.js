@@ -8,34 +8,12 @@ import bcrypt from 'bcryptjs'
 const app = express()
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
 
-// CORS configuration
-const corsOptions = {
-  origin: function (origin, callback) {
-    const allowedOrigins = [
-      'http://localhost:3000',
-      'http://localhost:3001', 
-      'http://localhost:3002',
-      'https://feiraja.vercel.app',
-      'https://server-omega-azure-57.vercel.app'
-    ]
-    
-    // Allow requests with no origin (mobile apps, etc.)
-    if (!origin) return callback(null, true)
-    
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true)
-    } else {
-      callback(new Error('Not allowed by CORS'))
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  optionsSuccessStatus: 200
-}
+// Handle OPTIONS requests for all routes
+app.options('*', (req, res) => {
+  res.status(200).end()
+})
 
-// Middleware
-app.use(cors(corsOptions))
+// Middleware - CORS handled by vercel.json
 app.use(bodyParser.json())
 
 // In-memory database (replace with real database in production)
@@ -183,11 +161,6 @@ let database = {
 
 // Authentication middleware
 const authenticateToken = (req, res, next) => {
-  // Skip authentication for OPTIONS requests
-  if (req.method === 'OPTIONS') {
-    return next()
-  }
-
   const authHeader = req.headers['authorization']
   const token = authHeader && authHeader.split(' ')[1]
 
