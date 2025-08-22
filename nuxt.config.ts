@@ -6,7 +6,7 @@ export default defineNuxtConfig({
   modules: ['@nuxt/eslint', '@nuxt/fonts', '@nuxt/image', '@nuxtjs/tailwindcss'],
   runtimeConfig: {
     public: {
-      apiBaseUrl: process.env.API_BASE_URL || 'http://localhost:3003'
+      apiBaseUrl: process.env.API_BASE_URL || 'https://server-nim51i4bb-trev0uxs-projects.vercel.app'
     }
   }
 })

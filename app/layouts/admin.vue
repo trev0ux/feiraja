@@ -351,7 +351,7 @@
 </template>
 
 <script setup>
-import LogoIcon from '../components/icons/LogoIcon.vue'
+import LogoIcon from '~/components/icons/LogoIcon.vue'
 const router = useRouter()
 const route = useRoute()
 

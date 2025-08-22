@@ -8,11 +8,26 @@ import bcrypt from 'bcryptjs'
 const app = express()
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
 
+// Custom CORS middleware
+const allowCrossDomain = (req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*')
+  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+  res.header('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With')
+  res.header('Access-Control-Allow-Credentials', 'true')
+  
+  if (req.method === 'OPTIONS') {
+    res.status(200).end()
+    return
+  }
+  next()
+}
+
 // Middleware
+app.use(allowCrossDomain)
 app.use(
   cors({
-    origin: ['*'],
-    credentials: false,
+    origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'https://feiraja.vercel.app'],
+    credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   })

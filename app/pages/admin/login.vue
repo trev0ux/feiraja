@@ -129,7 +129,7 @@
 </template>
 
 <script setup>
-import LogoIcon from '../../components/icons/LogoIcon.vue'
+import LogoIcon from '~/components/icons/LogoIcon.vue'
 definePageMeta({
   layout: false,
 })
