@@ -13,7 +13,12 @@ const PORT = process.env.PORT || 3003
 const JWT_SECRET = 'your-secret-key-change-in-production'
 
 // Middleware
-app.use(cors())
+app.use(cors({
+  origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'https://feiraja.vercel.app'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+}))
 app.use(bodyParser.json())
 app.use('/uploads', express.static('uploads'))
 
