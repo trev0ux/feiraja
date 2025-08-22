@@ -117,6 +117,7 @@ import SearchIcon from '~/components/icons/SearchIcon.vue'
 import CategoriesSlider from '~/components/CategoriesSlider.vue'
 import ProductCard from '~/components/ProductCard.vue'
 
+const { apiCall } = useApi()
 const selectedCategory = ref('Todas')
 const searchTerm = ref('')
 const displayedProductsCount = ref(8) // Start with 8 products
@@ -195,7 +196,6 @@ const fetchProducts = async () => {
       params.append('search', searchTerm.value)
     }
 
-    const { apiCall } = useApi()
     const response = await apiCall(`/api/products?${params}`)
     allProducts.value = response.products
   } catch (error) {

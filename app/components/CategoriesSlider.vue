@@ -18,6 +18,7 @@
 
 <script setup>
 const emit = defineEmits(['categorySelected'])
+const { apiCall } = useApi()
 
 const categories = ref([
   { id: 0, name: 'Todas', active: true }
@@ -26,7 +27,6 @@ const categories = ref([
 // Fetch categories from API
 const fetchCategories = async () => {
   try {
-    const { apiCall } = useApi()
     const apiCategories = await apiCall('/api/categories')
     categories.value = [
       { id: 0, name: 'Todas', active: true },
