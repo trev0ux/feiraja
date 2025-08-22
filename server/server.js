@@ -1,15 +1,15 @@
-const express = require('express')
-const cors = require('cors')
-const bodyParser = require('body-parser')
-const jwt = require('jsonwebtoken')
-const bcrypt = require('bcryptjs')
-const multer = require('multer')
-const path = require('path')
-const fs = require('fs')
-const { v4: uuidv4 } = require('uuid')
+import express from 'express'
+import cors from 'cors'
+import bodyParser from 'body-parser'
+import jwt from 'jsonwebtoken'
+import bcrypt from 'bcryptjs'
+import multer from 'multer'
+import path from 'path'
+import fs from 'fs'
+import { v4 as uuidv4 } from 'uuid'
 
 const app = express()
-const PORT = process.env.PORT || 3002
+const PORT = process.env.PORT || 3003
 const JWT_SECRET = 'your-secret-key-change-in-production'
 
 // Middleware
@@ -72,7 +72,8 @@ let database = {
         distance: '45 km de São Paulo',
         harvestDate: '2025-08-20',
         certifications: ['Orgânico IBD', 'Selo SisOrg'],
-        story: 'A Fazenda São João é uma propriedade familiar que há 3 gerações se dedica ao cultivo orgânico. Nossos tomates são cultivados em estufas com sistema de irrigação por gotejamento, garantindo o máximo aproveitamento da água.'
+        story:
+          'A Fazenda São João é uma propriedade familiar que há 3 gerações se dedica ao cultivo orgânico. Nossos tomates são cultivados em estufas com sistema de irrigação por gotejamento, garantindo o máximo aproveitamento da água.',
       },
       nutritionalInfo: {
         portion: '100g',
@@ -80,7 +81,7 @@ let database = {
         carbs: '3.9g',
         fiber: '1.2g',
         protein: '0.9g',
-        vitamins: ['Vitamina C', 'Licopeno', 'Potássio']
+        vitamins: ['Vitamina C', 'Licopeno', 'Potássio'],
       },
       createdAt: new Date(),
     },
@@ -98,7 +99,8 @@ let database = {
         distance: '180 km de São Paulo',
         harvestDate: '2025-08-19',
         certifications: ['Produção Sustentável'],
-        story: 'O Sítio Frutas do Vale cultiva bananas há mais de 20 anos no Vale do Ribeira. Utilizamos técnicas de agricultura regenerativa que preservam o solo e promovem a biodiversidade local.'
+        story:
+          'O Sítio Frutas do Vale cultiva bananas há mais de 20 anos no Vale do Ribeira. Utilizamos técnicas de agricultura regenerativa que preservam o solo e promovem a biodiversidade local.',
       },
       nutritionalInfo: {
         portion: '100g',
@@ -106,7 +108,7 @@ let database = {
         carbs: '22.8g',
         fiber: '2.6g',
         protein: '1.1g',
-        vitamins: ['Potássio', 'Vitamina B6', 'Vitamina C']
+        vitamins: ['Potássio', 'Vitamina B6', 'Vitamina C'],
       },
       createdAt: new Date(),
     },
@@ -124,7 +126,8 @@ let database = {
         distance: '220 km de São Paulo',
         harvestDate: '2025-07-15',
         certifications: ['Orgânico IBD', 'Fair Trade'],
-        story: 'A Cooperativa Terra Rica reúne 15 famílias de pequenos produtores que trabalham juntas para produzir arroz integral de alta qualidade, respeitando os ciclos naturais e preservando as nascentes da região.'
+        story:
+          'A Cooperativa Terra Rica reúne 15 famílias de pequenos produtores que trabalham juntas para produzir arroz integral de alta qualidade, respeitando os ciclos naturais e preservando as nascentes da região.',
       },
       nutritionalInfo: {
         portion: '100g',
@@ -132,7 +135,7 @@ let database = {
         carbs: '23g',
         fiber: '1.8g',
         protein: '2.6g',
-        vitamins: ['Magnésio', 'Selênio', 'Manganês']
+        vitamins: ['Magnésio', 'Selênio', 'Manganês'],
       },
       createdAt: new Date(),
     },
@@ -232,7 +235,7 @@ app.get('/api/categories', (req, res) => {
     const categoriesWithProducts = database.categories.filter(category => {
       return database.products.some(product => product.categoryId === category.id)
     })
-    
+
     res.json(categoriesWithProducts)
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' })
@@ -384,11 +387,14 @@ app.post('/api/admin/products', authenticateToken, upload.single('image'), (req,
 
     // Parse nutritional information
     const nutritionalInfo = {}
-    if (req.body['nutritionalInfo.portion']) nutritionalInfo.portion = req.body['nutritionalInfo.portion']
-    if (req.body['nutritionalInfo.calories']) nutritionalInfo.calories = parseInt(req.body['nutritionalInfo.calories'])
+    if (req.body['nutritionalInfo.portion'])
+      nutritionalInfo.portion = req.body['nutritionalInfo.portion']
+    if (req.body['nutritionalInfo.calories'])
+      nutritionalInfo.calories = parseInt(req.body['nutritionalInfo.calories'])
     if (req.body['nutritionalInfo.carbs']) nutritionalInfo.carbs = req.body['nutritionalInfo.carbs']
     if (req.body['nutritionalInfo.fiber']) nutritionalInfo.fiber = req.body['nutritionalInfo.fiber']
-    if (req.body['nutritionalInfo.protein']) nutritionalInfo.protein = req.body['nutritionalInfo.protein']
+    if (req.body['nutritionalInfo.protein'])
+      nutritionalInfo.protein = req.body['nutritionalInfo.protein']
     if (req.body['nutritionalInfo.vitamins']) {
       try {
         nutritionalInfo.vitamins = JSON.parse(req.body['nutritionalInfo.vitamins'])
@@ -446,7 +452,8 @@ app.put('/api/admin/products/:id', authenticateToken, upload.single('image'), (r
     if (req.body['origin.producer'] !== undefined) origin.producer = req.body['origin.producer']
     if (req.body['origin.location'] !== undefined) origin.location = req.body['origin.location']
     if (req.body['origin.distance'] !== undefined) origin.distance = req.body['origin.distance']
-    if (req.body['origin.harvestDate'] !== undefined) origin.harvestDate = req.body['origin.harvestDate']
+    if (req.body['origin.harvestDate'] !== undefined)
+      origin.harvestDate = req.body['origin.harvestDate']
     if (req.body['origin.certifications'] !== undefined) {
       try {
         origin.certifications = JSON.parse(req.body['origin.certifications'])
@@ -458,11 +465,16 @@ app.put('/api/admin/products/:id', authenticateToken, upload.single('image'), (r
 
     // Parse nutritional information
     const nutritionalInfo = { ...database.products[productIndex].nutritionalInfo }
-    if (req.body['nutritionalInfo.portion'] !== undefined) nutritionalInfo.portion = req.body['nutritionalInfo.portion']
-    if (req.body['nutritionalInfo.calories'] !== undefined) nutritionalInfo.calories = parseInt(req.body['nutritionalInfo.calories'])
-    if (req.body['nutritionalInfo.carbs'] !== undefined) nutritionalInfo.carbs = req.body['nutritionalInfo.carbs']
-    if (req.body['nutritionalInfo.fiber'] !== undefined) nutritionalInfo.fiber = req.body['nutritionalInfo.fiber']
-    if (req.body['nutritionalInfo.protein'] !== undefined) nutritionalInfo.protein = req.body['nutritionalInfo.protein']
+    if (req.body['nutritionalInfo.portion'] !== undefined)
+      nutritionalInfo.portion = req.body['nutritionalInfo.portion']
+    if (req.body['nutritionalInfo.calories'] !== undefined)
+      nutritionalInfo.calories = parseInt(req.body['nutritionalInfo.calories'])
+    if (req.body['nutritionalInfo.carbs'] !== undefined)
+      nutritionalInfo.carbs = req.body['nutritionalInfo.carbs']
+    if (req.body['nutritionalInfo.fiber'] !== undefined)
+      nutritionalInfo.fiber = req.body['nutritionalInfo.fiber']
+    if (req.body['nutritionalInfo.protein'] !== undefined)
+      nutritionalInfo.protein = req.body['nutritionalInfo.protein']
     if (req.body['nutritionalInfo.vitamins'] !== undefined) {
       try {
         nutritionalInfo.vitamins = JSON.parse(req.body['nutritionalInfo.vitamins'])
@@ -586,17 +598,17 @@ app.get('/api/addresses/:id', (req, res) => {
 // Create new address (admin endpoint)
 app.post('/api/admin/addresses', authenticateToken, (req, res) => {
   try {
-    const { 
+    const {
       userId = 1, // Default to user 1 for now
-      name, 
-      street, 
-      neighborhood, 
-      city, 
-      state, 
-      zipCode, 
-      complement, 
-      reference, 
-      isDefault = false 
+      name,
+      street,
+      neighborhood,
+      city,
+      state,
+      zipCode,
+      complement,
+      reference,
+      isDefault = false,
     } = req.body
 
     if (!name || !street || !neighborhood || !city || !state || !zipCode) {
@@ -640,7 +652,8 @@ app.post('/api/admin/addresses', authenticateToken, (req, res) => {
 app.put('/api/admin/addresses/:id', authenticateToken, (req, res) => {
   try {
     const addressId = parseInt(req.params.id)
-    const { name, street, neighborhood, city, state, zipCode, complement, reference, isDefault } = req.body
+    const { name, street, neighborhood, city, state, zipCode, complement, reference, isDefault } =
+      req.body
 
     const addressIndex = database.addresses.findIndex(addr => addr.id === addressId)
     if (addressIndex === -1) {
@@ -693,12 +706,14 @@ app.delete('/api/admin/addresses/:id', authenticateToken, (req, res) => {
 
     // If we're deleting the default address, set another address as default (if exists)
     if (deletedAddress.isDefault) {
-      const otherUserAddresses = database.addresses.filter(addr => 
-        addr.userId === deletedAddress.userId && addr.id !== addressId
+      const otherUserAddresses = database.addresses.filter(
+        addr => addr.userId === deletedAddress.userId && addr.id !== addressId
       )
       if (otherUserAddresses.length > 0) {
         // Set the first remaining address as default
-        const firstOtherAddress = database.addresses.find(addr => addr.id === otherUserAddresses[0].id)
+        const firstOtherAddress = database.addresses.find(
+          addr => addr.id === otherUserAddresses[0].id
+        )
         if (firstOtherAddress) {
           firstOtherAddress.isDefault = true
         }
@@ -747,4 +762,4 @@ if (process.env.NODE_ENV !== 'production') {
   })
 }
 
-module.exports = app
+export default app

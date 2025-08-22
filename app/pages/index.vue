@@ -30,14 +30,17 @@
               {{ searchTerm ? `Resultados para "${searchTerm}"` : selectedCategory }}
             </h3>
             <p class="text-gray-600 text-sm">
-              {{ displayedProducts.length }}{{ hasMoreProducts ? '+' : '' }} de {{ allFilteredProducts.length }} produto{{ allFilteredProducts.length !== 1 ? 's' : '' }}
+              {{ displayedProducts.length }}{{ hasMoreProducts ? '+' : '' }} de
+              {{ allFilteredProducts.length }} produto{{
+                allFilteredProducts.length !== 1 ? 's' : ''
+              }}
               <span v-if="searchTerm && selectedCategory !== 'Todas'" class="text-aux-orange">
                 em {{ selectedCategory }}
               </span>
             </p>
           </div>
-          <button 
-            v-if="searchTerm" 
+          <button
+            v-if="searchTerm"
             @click="clearSearch"
             class="text-aux-orange text-sm hover:text-opacity-80"
           >
@@ -46,23 +49,29 @@
         </div>
         <!-- Empty State -->
         <div v-if="allFilteredProducts.length === 0" class="text-center py-12">
-          <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+          <div
+            class="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center"
+          >
             <SearchIcon color="#9CA3AF" />
           </div>
           <h3 class="text-gray-900 font-semibold mb-2">Nenhum produto encontrado</h3>
           <p class="text-gray-600 mb-4">
-            {{ searchTerm ? `Não encontramos produtos com "${searchTerm}"` : `Não há produtos na categoria "${selectedCategory}"` }}
+            {{
+              searchTerm
+                ? `Não encontramos produtos com "${searchTerm}"`
+                : `Não há produtos na categoria "${selectedCategory}"`
+            }}
           </p>
           <div class="space-x-4">
-            <button 
-              v-if="searchTerm" 
+            <button
+              v-if="searchTerm"
               @click="clearSearch"
               class="text-aux-orange hover:text-opacity-80"
             >
               Limpar busca
             </button>
-            <button 
-              v-if="selectedCategory !== 'Todas'" 
+            <button
+              v-if="selectedCategory !== 'Todas'"
               @click="selectedCategory = 'Todas'"
               class="text-aux-orange hover:text-opacity-80"
             >
@@ -85,7 +94,9 @@
           <!-- Loading Indicator -->
           <div v-if="isLoading" class="flex justify-center items-center py-8">
             <div class="flex items-center space-x-2 text-aux-orange">
-              <div class="animate-spin w-6 h-6 border-2 border-aux-orange border-t-transparent rounded-full"></div>
+              <div
+                class="animate-spin w-6 h-6 border-2 border-aux-orange border-t-transparent rounded-full"
+              ></div>
               <span class="text-sm">Carregando mais produtos...</span>
             </div>
           </div>
@@ -116,6 +127,7 @@
 import SearchIcon from '~/components/icons/SearchIcon.vue'
 import CategoriesSlider from '~/components/CategoriesSlider.vue'
 import ProductCard from '~/components/ProductCard.vue'
+import { useApi } from '../composables/useApi'
 
 const { apiCall } = useApi()
 const selectedCategory = ref('Todas')
@@ -160,10 +172,11 @@ const allFilteredProducts = computed(() => {
   // Filter by search term
   if (searchTerm.value.trim()) {
     const search = searchTerm.value.toLowerCase().trim()
-    products = products.filter(product => 
-      product.name.toLowerCase().includes(search) ||
-      product.description.toLowerCase().includes(search) ||
-      product.category.toLowerCase().includes(search)
+    products = products.filter(
+      product =>
+        product.name.toLowerCase().includes(search) ||
+        product.description.toLowerCase().includes(search) ||
+        product.category.toLowerCase().includes(search)
     )
   }
 
@@ -175,9 +188,13 @@ const displayedProducts = computed(() => {
 })
 
 // Watch for changes in filtered products to update hasMoreProducts
-watch(allFilteredProducts, (newProducts) => {
-  hasMoreProducts.value = displayedProductsCount.value < newProducts.length
-}, { immediate: true })
+watch(
+  allFilteredProducts,
+  newProducts => {
+    hasMoreProducts.value = displayedProductsCount.value < newProducts.length
+  },
+  { immediate: true }
+)
 
 // Fetch products from API
 const fetchProducts = async () => {
@@ -185,7 +202,7 @@ const fetchProducts = async () => {
   try {
     const params = new URLSearchParams({
       page: 1,
-      limit: 100 // Get more products for infinite scroll
+      limit: 100, // Get more products for infinite scroll
     })
 
     if (selectedCategory.value !== 'Todas') {
@@ -208,16 +225,16 @@ const fetchProducts = async () => {
 
 const loadMoreProducts = async () => {
   if (isLoading.value || !hasMoreProducts.value) return
-  
+
   isLoading.value = true
-  
+
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 800))
-  
+
   const newCount = displayedProductsCount.value + 8
   displayedProductsCount.value = Math.min(newCount, allFilteredProducts.value.length)
   hasMoreProducts.value = displayedProductsCount.value < allFilteredProducts.value.length
-  
+
   isLoading.value = false
 }
 
@@ -229,7 +246,7 @@ const onQuantityChanged = data => {
 const handleScroll = () => {
   const scrollPosition = window.scrollY + window.innerHeight
   const documentHeight = document.documentElement.scrollHeight
-  
+
   // Load more when user is 200px from bottom
   if (scrollPosition >= documentHeight - 200 && !isLoading.value && hasMoreProducts.value) {
     loadMoreProducts()

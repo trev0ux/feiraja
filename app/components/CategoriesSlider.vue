@@ -17,12 +17,12 @@
 </template>
 
 <script setup>
+import { useApi } from '../composables/useApi'
+
 const emit = defineEmits(['categorySelected'])
 const { apiCall } = useApi()
 
-const categories = ref([
-  { id: 0, name: 'Todas', active: true }
-])
+const categories = ref([{ id: 0, name: 'Todas', active: true }])
 
 // Fetch categories from API
 const fetchCategories = async () => {
@@ -30,7 +30,7 @@ const fetchCategories = async () => {
     const apiCategories = await apiCall('/api/categories')
     categories.value = [
       { id: 0, name: 'Todas', active: true },
-      ...apiCategories.map(cat => ({ ...cat, active: false }))
+      ...apiCategories.map(cat => ({ ...cat, active: false })),
     ]
   } catch (error) {
     console.error('Error fetching categories:', error)
