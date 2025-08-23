@@ -6,7 +6,7 @@ export default defineNuxtConfig({
   modules: ['@nuxt/eslint', '@nuxt/fonts', '@nuxt/image', '@nuxtjs/tailwindcss'],
   runtimeConfig: {
     public: {
-      apiBaseUrl: process.env.API_BASE_URL || 'https://feiraja-api.vercel.app/api/categories',
+      apiBaseUrl: process.env.API_BASE_URL || 'https://feiraja-api.vercel.app',
     },
   },
 })
