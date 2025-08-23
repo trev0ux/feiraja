@@ -3,7 +3,9 @@
     "allow": [
       "Bash(npm run dev:*)",
       "Bash(curl:*)",
-      "Bash(npx vercel:*)"
+      "Bash(npx vercel:*)",
+      "Bash(mkdir:*)",
+      "Bash(npm install)"
     ],
     "deny": [],
     "ask": []
