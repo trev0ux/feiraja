@@ -5,10 +5,10 @@
       <NuxtLink :to="`/product/${product.id}`" class="absolute inset-0 z-0 hover:shadow-md transition-shadow rounded-lg">
         <img
           v-if="product.image"
-          :src="`${$config.public.apiBaseUrl}${product.image}`"
+          :src="product.image"
           :alt="product.name"
           class="w-full h-full object-cover rounded-lg"
-        />
+        >
         <div v-else class="w-full h-full flex items-center justify-center text-gray-400 text-sm rounded-lg">
           Sem imagem
         </div>
@@ -27,8 +27,8 @@
         <!-- Plus icon only (when quantity is 0) -->
         <button
           v-if="quantity === 0"
-          @click.stop="addItem"
           class="w-8 h-8 bg-aux-orange text-white rounded-full flex items-center justify-center hover:bg-opacity-90 transition-colors"
+          @click.stop="addItem"
         >
           <svg
             width="16"
@@ -49,8 +49,8 @@
         <!-- Quantity controls (when quantity > 0) -->
         <div v-else class="flex items-center gap-3">
           <button
-            @click.stop="removeItem"
             class="w-8 h-8 bg-white border border-aux-orange text-aux-orange rounded-full flex items-center justify-center hover:bg-white transition-colors"
+            @click.stop="removeItem"
           >
             <svg
               width="16"
@@ -66,8 +66,8 @@
           <span class="font-semibold text-aux-black min-w-[20px] text-center">{{ quantity }}</span>
 
           <button
-            @click.stop="addItem"
             class="w-8 h-8 bg-aux-orange text-white rounded-full flex items-center justify-center hover:bg-opacity-90 transition-colors"
+            @click.stop="addItem"
           >
             <svg
               width="16"
@@ -99,8 +99,6 @@
 </template>
 
 <script setup>
-const { $config } = useNuxtApp()
-
 const props = defineProps({
   product: {
     type: Object,

@@ -25,7 +25,7 @@
             placeholder="Nome do produto..."
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-aux-orange focus:border-aux-orange"
             @input="debouncedSearch"
-          />
+          >
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
@@ -58,8 +58,8 @@
         </div>
         <div class="flex items-end">
           <button
-            @click="clearFilters"
             class="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
+            @click="clearFilters"
           >
             Limpar Filtros
           </button>
@@ -71,7 +71,7 @@
     <div class="bg-white rounded-lg shadow overflow-hidden">
       <div v-if="loading" class="p-6 text-center">
         <div class="inline-flex items-center">
-          <div class="animate-spin w-6 h-6 border-2 border-aux-orange border-t-transparent rounded-full mr-3"></div>
+          <div class="animate-spin w-6 h-6 border-2 border-aux-orange border-t-transparent rounded-full mr-3"/>
           Carregando produtos...
         </div>
       </div>
@@ -108,10 +108,10 @@
                   <div class="flex-shrink-0 h-12 w-12">
                     <img
                       v-if="product.image"
-                      :src="`${$config.public.apiBaseUrl}${product.image}`"
+                      :src="product.image"
                       :alt="product.name"
                       class="h-12 w-12 rounded-lg object-cover"
-                    />
+                    >
                     <div
                       v-else
                       class="h-12 w-12 rounded-lg bg-gray-200 flex items-center justify-center"
@@ -156,8 +156,8 @@
                     Editar
                   </NuxtLink>
                   <button
-                    @click="deleteProduct(product)"
                     class="text-red-600 hover:text-red-800"
+                    @click="deleteProduct(product)"
                   >
                     Excluir
                   </button>
@@ -178,13 +178,13 @@
             <button
               v-for="page in paginationPages"
               :key="page"
-              @click="changePage(page)"
               :class="[
                 'px-3 py-1 rounded-md text-sm',
                 page === pagination.currentPage
                   ? 'bg-aux-orange text-white'
                   : 'bg-white text-gray-700 hover:bg-gray-100'
               ]"
+              @click="changePage(page)"
             >
               {{ page }}
             </button>
@@ -200,7 +200,7 @@
       @click="deleteModal.show = false"
     >
       <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center">
-        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"/>
         <div
           class="relative inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full"
           @click.stop
@@ -227,15 +227,15 @@
           </div>
           <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
             <button
-              @click="confirmDelete"
               :disabled="deleteModal.loading"
               class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
+              @click="confirmDelete"
             >
               {{ deleteModal.loading ? 'Excluindo...' : 'Excluir' }}
             </button>
             <button
-              @click="deleteModal.show = false"
               class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-aux-orange sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+              @click="deleteModal.show = false"
             >
               Cancelar
             </button>
@@ -251,7 +251,6 @@ definePageMeta({
   layout: 'admin'
 })
 
-const { $config } = useNuxtApp()
 const loading = ref(false)
 const products = ref([])
 const categories = ref([])
@@ -353,7 +352,7 @@ const paginationPages = computed(() => {
   
   // Show max 5 pages
   let start = Math.max(1, current - 2)
-  let end = Math.min(total, start + 4)
+  const end = Math.min(total, start + 4)
   
   if (end - start < 4) {
     start = Math.max(1, end - 4)

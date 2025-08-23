@@ -21,7 +21,7 @@
     </div>
 
     <!-- Form -->
-    <form @submit.prevent="saveProduct" class="space-y-6">
+    <form class="space-y-6" @submit.prevent="saveProduct">
       <div class="bg-white rounded-lg shadow p-6">
         <!-- Basic Information -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -40,7 +40,7 @@
               required
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-aux-orange focus:border-aux-orange"
               placeholder="Ex: Tomate Orgânico"
-            />
+            >
           </div>
 
           <div>
@@ -56,7 +56,7 @@
               required
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-aux-orange focus:border-aux-orange"
               placeholder="0.00"
-            />
+            >
           </div>
 
           <div>
@@ -91,7 +91,7 @@
                   type="radio"
                   :value="true"
                   class="h-4 w-4 text-aux-orange border-gray-300 focus:ring-aux-orange"
-                />
+                >
                 <span class="ml-2 text-sm text-gray-700">Ativo</span>
               </label>
               <label class="flex items-center">
@@ -100,7 +100,7 @@
                   type="radio"
                   :value="false"
                   class="h-4 w-4 text-aux-orange border-gray-300 focus:ring-aux-orange"
-                />
+                >
                 <span class="ml-2 text-sm text-gray-700">Inativo</span>
               </label>
             </div>
@@ -116,7 +116,7 @@
               rows="3"
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-aux-orange focus:border-aux-orange resize-none"
               placeholder="Descreva o produto..."
-            ></textarea>
+            />
           </div>
         </div>
       </div>
@@ -130,13 +130,29 @@
             <label for="producer" class="block text-sm font-medium text-gray-700 mb-1">
               Produtor
             </label>
-            <input
+            <select
               id="producer"
-              v-model="form.origin.producer"
-              type="text"
+              v-model="form.origin.producerId"
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-aux-orange focus:border-aux-orange"
-              placeholder="Ex: Fazenda São João"
-            />
+            >
+              <option value="">Selecione um produtor</option>
+              <option
+                v-for="producer in producers"
+                :key="producer.id"
+                :value="producer.id"
+              >
+                {{ producer.name }}{{ producer.location ? ` - ${producer.location}` : '' }}
+              </option>
+            </select>
+            <p class="text-xs text-gray-500 mt-1">
+              <NuxtLink 
+                to="/admin/producers" 
+                target="_blank" 
+                class="text-aux-orange hover:text-opacity-80"
+              >
+                Gerenciar produtores
+              </NuxtLink>
+            </p>
           </div>
 
           <div>
@@ -149,7 +165,7 @@
               type="text"
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-aux-orange focus:border-aux-orange"
               placeholder="Ex: Ibiúna, São Paulo"
-            />
+            >
           </div>
 
           <div>
@@ -162,7 +178,7 @@
               type="text"
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-aux-orange focus:border-aux-orange"
               placeholder="Ex: 45 km de São Paulo"
-            />
+            >
           </div>
 
           <div>
@@ -174,7 +190,7 @@
               v-model="form.origin.harvestDate"
               type="date"
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-aux-orange focus:border-aux-orange"
-            />
+            >
           </div>
 
           <div class="lg:col-span-2">
@@ -187,7 +203,7 @@
               type="text"
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-aux-orange focus:border-aux-orange"
               placeholder="Ex: Orgânico IBD, Selo SisOrg (separar por vírgula)"
-            />
+            >
             <p class="text-xs text-gray-500 mt-1">Separe múltiplas certificações por vírgula</p>
           </div>
 
@@ -201,7 +217,7 @@
               rows="4"
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-aux-orange focus:border-aux-orange resize-none"
               placeholder="Conte a história do produtor, métodos de cultivo, tradições familiares..."
-            ></textarea>
+            />
           </div>
         </div>
       </div>
@@ -221,7 +237,7 @@
               type="text"
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-aux-orange focus:border-aux-orange"
               placeholder="Ex: 100g"
-            />
+            >
           </div>
 
           <div>
@@ -235,7 +251,7 @@
               min="0"
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-aux-orange focus:border-aux-orange"
               placeholder="Ex: 18"
-            />
+            >
           </div>
 
           <div>
@@ -248,7 +264,7 @@
               type="text"
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-aux-orange focus:border-aux-orange"
               placeholder="Ex: 3.9g"
-            />
+            >
           </div>
 
           <div>
@@ -261,7 +277,7 @@
               type="text"
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-aux-orange focus:border-aux-orange"
               placeholder="Ex: 1.2g"
-            />
+            >
           </div>
 
           <div>
@@ -274,7 +290,7 @@
               type="text"
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-aux-orange focus:border-aux-orange"
               placeholder="Ex: 0.9g"
-            />
+            >
           </div>
 
           <div class="lg:col-span-3">
@@ -287,7 +303,7 @@
               type="text"
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-aux-orange focus:border-aux-orange"
               placeholder="Ex: Vitamina C, Licopeno, Potássio (separar por vírgula)"
-            />
+            >
             <p class="text-xs text-gray-500 mt-1">Separe múltiplas vitaminas/minerais por vírgula</p>
           </div>
         </div>
@@ -306,11 +322,11 @@
                 :src="currentImage"
                 alt="Imagem atual do produto"
                 class="w-full h-48 object-cover rounded-lg border border-gray-200"
-              />
+              >
               <button
                 type="button"
-                @click="removeCurrentImage"
                 class="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                @click="removeCurrentImage"
               >
                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -331,11 +347,11 @@
                 :src="imagePreview"
                 alt="Preview da nova imagem"
                 class="w-full h-48 object-cover rounded-lg border border-gray-200"
-              />
+              >
               <button
                 type="button"
-                @click="removeImagePreview"
                 class="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                @click="removeImagePreview"
               >
                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -346,10 +362,10 @@
             <!-- Upload area -->
             <div
               v-else
+              class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-aux-orange cursor-pointer transition-colors"
               @click="$refs.fileInput.click()"
               @dragover.prevent
               @drop.prevent="handleDrop"
-              class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-aux-orange cursor-pointer transition-colors"
             >
               <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
                 <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
@@ -367,9 +383,9 @@
               ref="fileInput"
               type="file"
               accept="image/*"
-              @change="handleFileSelect"
               class="hidden"
-            />
+              @change="handleFileSelect"
+            >
           </div>
         </div>
       </div>
@@ -408,6 +424,7 @@ const productId = computed(() => parseInt(route.params.id))
 const loading = ref(false)
 const saving = ref(false)
 const categories = ref([])
+const producers = ref([])
 
 const form = ref({
   name: '',
@@ -416,6 +433,7 @@ const form = ref({
   categoryId: '',
   inStock: true,
   origin: {
+    producerId: '',
     producer: '',
     location: '',
     distance: '',
@@ -466,6 +484,17 @@ const fetchCategories = async () => {
   }
 }
 
+// Fetch producers
+const fetchProducers = async () => {
+  try {
+    const { $config } = useNuxtApp()
+    const response = await $fetch(`${$config.public.apiBaseUrl}/api/producers?isActive=true`)
+    producers.value = response.producers || []
+  } catch (error) {
+    console.error('Error fetching producers:', error)
+  }
+}
+
 // Fetch product data for editing
 const fetchProduct = async () => {
   if (isNewProduct.value) return
@@ -484,6 +513,7 @@ const fetchProduct = async () => {
         categoryId: product.categoryId,
         inStock: product.inStock,
         origin: {
+          producerId: product.origin?.producerId || '',
           producer: product.origin?.producer || '',
           location: product.origin?.location || '',
           distance: product.origin?.distance || '',
@@ -502,8 +532,7 @@ const fetchProduct = async () => {
       }
       
       if (product.image) {
-        const { $config } = useNuxtApp()
-        currentImage.value = `${$config.public.apiBaseUrl}${product.image}`
+        currentImage.value = product.image
       }
     } else {
       throw new Error('Product not found')
@@ -582,6 +611,7 @@ const saveProduct = async () => {
     formData.append('inStock', form.value.inStock)
     
     // Add origin information
+    if (form.value.origin.producerId) formData.append('origin.producerId', form.value.origin.producerId)
     if (form.value.origin.producer) formData.append('origin.producer', form.value.origin.producer)
     if (form.value.origin.location) formData.append('origin.location', form.value.origin.location)
     if (form.value.origin.distance) formData.append('origin.distance', form.value.origin.distance)
@@ -638,6 +668,7 @@ const saveProduct = async () => {
 
 onMounted(async () => {
   await fetchCategories()
+  await fetchProducers()
   await fetchProduct()
 })
 </script>
