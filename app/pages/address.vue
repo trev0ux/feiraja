@@ -219,25 +219,33 @@ onMounted(() => {
   }
 })
 
-const loadAddressForEdit = (addressId) => {
-  // Mock data - in real app, fetch from API
-  const mockAddresses = [
-    {
-      id: 1,
-      label: 'Casa',
-      firstName: 'João',
-      lastName: 'Silva',
-      zipCode: '01234-567',
-      address: 'Rua das Flores, Centro, São Paulo - SP',
-      number: '123',
-      complement: 'Apto 45',
-      deliveryInstructions: 'Portão azul, tocar campainha'
+const loadAddressForEdit = async (addressId) => {
+  try {
+    const { $config } = useNuxtApp()
+    const token = useCookie('admin-token')
+    
+    const address = await $fetch(`${$config.public.apiBaseUrl}/api/addresses/${addressId}`, {
+      headers: {
+        Authorization: `Bearer ${token.value}`
+      }
+    })
+    
+    if (address) {
+      form.value = {
+        firstName: address.firstName || '',
+        lastName: address.lastName || '',
+        zipCode: address.zipCode || '',
+        address: address.street ? `${address.street}, ${address.neighborhood}, ${address.city} - ${address.state}` : '',
+        number: address.number || '',
+        complement: address.complement || '',
+        deliveryInstructions: address.deliveryInstructions || '',
+        label: address.label || ''
+      }
     }
-  ]
-  
-  const address = mockAddresses.find(addr => addr.id === addressId)
-  if (address) {
-    form.value = { ...address }
+  } catch (error) {
+    console.error('Error loading address:', error)
+    alert('Erro ao carregar endereço')
+    router.push('/manage-address')
   }
 }
 
@@ -291,31 +299,92 @@ const submitOrder = async () => {
   isSubmitting.value = true
   
   try {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500))
+    const { $config } = useNuxtApp()
+    const token = useCookie('admin-token')
+    
+    // Parse address back to separate fields for API
+    const addressParts = form.value.address.split(', ')
+    const addressData = {
+      firstName: form.value.firstName,
+      lastName: form.value.lastName,
+      zipCode: form.value.zipCode,
+      street: addressParts[0] || form.value.address,
+      number: form.value.number,
+      complement: form.value.complement,
+      neighborhood: addressParts[1] || '',
+      city: addressParts[2]?.split(' - ')[0] || '',
+      state: addressParts[2]?.split(' - ')[1] || '',
+      deliveryInstructions: form.value.deliveryInstructions,
+      label: form.value.label
+    }
     
     if (isEditing.value) {
       // Update existing address
-      console.log('Address updated:', form.value)
+      const addressId = parseInt(route.query.edit)
+      await $fetch(`${$config.public.apiBaseUrl}/api/addresses/${addressId}`, {
+        method: 'PUT',
+        body: addressData,
+        headers: {
+          Authorization: `Bearer ${token.value}`,
+          'Content-Type': 'application/json'
+        }
+      })
+      
       alert('Endereço atualizado com sucesso!')
       router.push('/manage-address')
     } else if (isNewAddress.value) {
       // Save new address
-      console.log('New address saved:', form.value)
+      await $fetch(`${$config.public.apiBaseUrl}/api/addresses`, {
+        method: 'POST',
+        body: addressData,
+        headers: {
+          Authorization: `Bearer ${token.value}`,
+          'Content-Type': 'application/json'
+        }
+      })
+      
       alert('Endereço salvo com sucesso!')
       router.push('/manage-address')
     } else {
       // Process order with new address
-      console.log('Order submitted:', {
-        customer: form.value,
-        items: basketItems,
-        total: totalPrice.value
+      const orderData = {
+        customer: addressData,
+        items: basketItems.map(item => ({
+          productId: item.product.id,
+          quantity: item.quantity,
+          price: item.product.price
+        })),
+        total: totalPrice.value,
+        deliveryAddress: addressData
+      }
+      
+      const response = await $fetch(`${$config.public.apiBaseUrl}/api/orders`, {
+        method: 'POST',
+        body: orderData,
+        headers: {
+          Authorization: `Bearer ${token.value}`,
+          'Content-Type': 'application/json'
+        }
       })
-      alert('Pedido realizado com sucesso!')
-      router.push('/')
+      
+      // Clear basket after successful order
+      const clearBasket = inject('clearBasket')
+      clearBasket()
+      
+      alert(`Pedido #${response.orderId || response.id} realizado com sucesso!`)
+      router.push('/order-confirmation')
     }
   } catch (error) {
-    alert('Erro ao processar. Tente novamente.')
+    console.error('Error submitting:', error)
+    
+    // Show more specific error messages
+    if (error.status === 401) {
+      alert('Sessão expirada. Faça login novamente.')
+    } else if (error.status === 400) {
+      alert('Dados inválidos. Verifique as informações e tente novamente.')
+    } else {
+      alert('Erro ao processar. Tente novamente.')
+    }
   } finally {
     isSubmitting.value = false
   }

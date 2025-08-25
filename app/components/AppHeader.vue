@@ -10,7 +10,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['updateQuantity'])
+const emit = defineEmits(['updateQuantity', 'clearCart'])
 
 const isBasketModalOpen = ref(false)
 
@@ -26,6 +26,10 @@ const handleUpdateQuantity = (data) => {
   emit('updateQuantity', data)
 }
 
+const handleClearCart = () => {
+  emit('clearCart')
+}
+
 const totalItems = computed(() => {
   return props.basketItems.reduce((total, item) => total + item.quantity, 0)
 })
@@ -34,10 +38,10 @@ const totalItems = computed(() => {
 <template>
   <header class="bg-aux-light-yellow">
     <div class="container py-4 flex justify-between items-center">
-      <h1 class="flex font-grotesque items-center gap-2 text-aux-black text-sm font-black">
+      <NuxtLink to="/" class="flex font-grotesque items-center gap-2 text-aux-black text-lg font-black">
         <LogoIcon />
         Feirajá
-      </h1>
+      </NuxtLink>
 
       <button
         type="button"
@@ -56,6 +60,7 @@ const totalItems = computed(() => {
       :basket-items="basketItems"
       @close="closeBasketModal"
       @update-quantity="handleUpdateQuantity"
+      @clear-cart="handleClearCart"
     />
   </header>
 </template>

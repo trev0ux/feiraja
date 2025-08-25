@@ -8,9 +8,6 @@ export const useApi = () => {
       const url = `${apiBaseUrl}${endpoint}`
       
       const defaultOptions = {
-        headers: {
-          'Content-Type': 'application/json',
-        },
         mode: 'cors',
         ...options,
         headers: {

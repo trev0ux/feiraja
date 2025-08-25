@@ -13,8 +13,47 @@
         <p class="text-gray-600">Escolha um endereço ou adicione um novo</p>
       </div>
 
+      <!-- Loading State -->
+      <div v-if="isLoading" class="space-y-4 mb-6">
+        <div v-for="i in 2" :key="i" class="bg-white rounded-lg shadow-sm border p-4">
+          <div class="flex items-start justify-between">
+            <div class="flex-1">
+              <div class="flex items-center mb-2">
+                <div class="w-4 h-4 bg-gray-200 rounded animate-pulse"></div>
+                <div class="ml-3 h-4 bg-gray-200 rounded animate-pulse w-20"></div>
+              </div>
+              <div class="ml-7 space-y-2">
+                <div class="h-4 bg-gray-200 rounded animate-pulse w-32"></div>
+                <div class="h-4 bg-gray-200 rounded animate-pulse w-48"></div>
+                <div class="h-4 bg-gray-200 rounded animate-pulse w-24"></div>
+              </div>
+            </div>
+            <div class="flex gap-2">
+              <div class="w-8 h-8 bg-gray-200 rounded animate-pulse"></div>
+              <div class="w-8 h-8 bg-gray-200 rounded animate-pulse"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Error State -->
+      <div v-else-if="error" class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+        <div class="flex items-center">
+          <svg class="h-5 w-5 text-red-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <p class="text-red-700">{{ error }}</p>
+        </div>
+        <button
+          @click="fetchAddresses"
+          class="mt-3 bg-red-100 text-red-700 px-3 py-1 rounded text-sm hover:bg-red-200 transition-colors"
+        >
+          Tentar novamente
+        </button>
+      </div>
+
       <!-- Saved Addresses -->
-      <div class="space-y-4 mb-6">
+      <div v-else-if="hasAddresses" class="space-y-4 mb-6">
         <div
           v-for="address in savedAddresses"
           :key="address.id"
@@ -128,35 +167,51 @@ const router = useRouter()
 // Get basket items from layout
 const basketItems = inject('getBasketItems', () => [])()
 
-// Mock saved addresses - in real app, fetch from API/localStorage
-const savedAddresses = ref([
-  {
-    id: 1,
-    label: 'Casa',
-    firstName: 'João',
-    lastName: 'Silva',
-    zipCode: '01234-567',
-    address: 'Rua das Flores, Centro, São Paulo - SP',
-    number: '123',
-    complement: 'Apto 45',
-    deliveryInstructions: 'Portão azul, tocar campainha',
-    isDefault: true
-  },
-  {
-    id: 2,
-    label: 'Trabalho',
-    firstName: 'João',
-    lastName: 'Silva',
-    zipCode: '04567-890',
-    address: 'Av. Paulista, Bela Vista, São Paulo - SP',
-    number: '1000',
-    complement: 'Sala 10',
-    deliveryInstructions: 'Recepção do prédio',
-    isDefault: false
-  }
-])
+const savedAddresses = ref([])
+const selectedAddressId = ref(null)
+const isLoading = ref(true)
+const error = ref('')
 
-const selectedAddressId = ref(savedAddresses.value.find(addr => addr.isDefault)?.id || null)
+// Fetch addresses from API
+const fetchAddresses = async () => {
+  isLoading.value = true
+  error.value = ''
+  
+  try {
+    const { $config } = useNuxtApp()
+    const token = useCookie('admin-token')
+    
+    const addresses = await $fetch(`${$config.public.apiBaseUrl}/api/addresses`, {
+      headers: {
+        Authorization: `Bearer ${token.value}`
+      }
+    })
+    
+    savedAddresses.value = addresses.map(addr => ({
+      id: addr.id,
+      label: addr.label || 'Endereço',
+      firstName: addr.firstName || '',
+      lastName: addr.lastName || '',
+      zipCode: addr.zipCode || '',
+      address: addr.street ? `${addr.street}, ${addr.neighborhood}, ${addr.city} - ${addr.state}` : '',
+      number: addr.number || '',
+      complement: addr.complement || '',
+      deliveryInstructions: addr.deliveryInstructions || '',
+      isDefault: addr.isDefault || false
+    }))
+    
+    // Set default selected address
+    const defaultAddr = savedAddresses.value.find(addr => addr.isDefault)
+    selectedAddressId.value = defaultAddr?.id || savedAddresses.value[0]?.id || null
+    
+  } catch (err) {
+    console.error('Error fetching addresses:', err)
+    error.value = 'Erro ao carregar endereços'
+    savedAddresses.value = []
+  } finally {
+    isLoading.value = false
+  }
+}
 
 const totalPrice = computed(() => {
   return basketItems.reduce((total, item) => {
@@ -181,37 +236,100 @@ const editAddress = (address) => {
   router.push(`/address?edit=${address.id}`)
 }
 
-const deleteAddress = (addressId) => {
+const deleteAddress = async (addressId) => {
   if (confirm('Tem certeza que deseja excluir este endereço?')) {
-    savedAddresses.value = savedAddresses.value.filter(addr => addr.id !== addressId)
-    
-    // If deleted address was selected, select default or first available
-    if (selectedAddressId.value === addressId) {
-      const defaultAddr = savedAddresses.value.find(addr => addr.isDefault)
-      selectedAddressId.value = defaultAddr?.id || savedAddresses.value[0]?.id || null
+    try {
+      const { $config } = useNuxtApp()
+      const token = useCookie('admin-token')
+      
+      await $fetch(`${$config.public.apiBaseUrl}/api/addresses/${addressId}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token.value}`
+        }
+      })
+      
+      // Refresh addresses list
+      await fetchAddresses()
+      
+    } catch (err) {
+      console.error('Error deleting address:', err)
+      alert('Erro ao excluir endereço. Tente novamente.')
     }
   }
 }
 
-const continueToPayment = () => {
+const continueToPayment = async () => {
   if (!selectedAddressId.value) return
   
   const selectedAddress = savedAddresses.value.find(addr => addr.id === selectedAddressId.value)
   
-  // Store selected address for order processing
-  console.log('Selected address:', selectedAddress)
-  
-  // Here you would typically proceed to payment or order confirmation
-  alert('Pedido realizado com sucesso!')
-  router.push('/')
+  try {
+    const { $config } = useNuxtApp()
+    const token = useCookie('admin-token')
+    
+    // Parse address back to separate fields for order API
+    const addressParts = selectedAddress.address.split(', ')
+    const orderData = {
+      deliveryAddressId: selectedAddress.id,
+      items: basketItems.map(item => ({
+        productId: item.product.id,
+        quantity: item.quantity,
+        price: item.product.price
+      })),
+      total: totalPrice.value,
+      deliveryAddress: {
+        firstName: selectedAddress.firstName,
+        lastName: selectedAddress.lastName,
+        zipCode: selectedAddress.zipCode,
+        street: addressParts[0] || '',
+        neighborhood: addressParts[1] || '',
+        city: addressParts[2]?.split(' - ')[0] || '',
+        state: addressParts[2]?.split(' - ')[1] || '',
+        number: selectedAddress.number,
+        complement: selectedAddress.complement,
+        deliveryInstructions: selectedAddress.deliveryInstructions
+      }
+    }
+    
+    const response = await $fetch(`${$config.public.apiBaseUrl}/api/orders`, {
+      method: 'POST',
+      body: orderData,
+      headers: {
+        Authorization: `Bearer ${token.value}`,
+        'Content-Type': 'application/json'
+      }
+    })
+    
+    // Clear basket after successful order
+    const clearBasket = inject('clearBasket')
+    clearBasket()
+    
+    alert(`Pedido #${response.orderId || response.id} realizado com sucesso!`)
+    router.push('/order-confirmation')
+    
+  } catch (err) {
+    console.error('Error creating order:', err)
+    
+    if (err.status === 401) {
+      alert('Sessão expirada. Faça login novamente.')
+    } else if (err.status === 400) {
+      alert('Dados inválidos. Verifique as informações e tente novamente.')
+    } else {
+      alert('Erro ao processar pedido. Tente novamente.')
+    }
+  }
 }
 
-// Check if user has saved addresses - in real app, this would be from API/auth
+// Check if user has saved addresses
 const hasAddresses = computed(() => savedAddresses.value.length > 0)
 
-// If no addresses, redirect to address form
-onMounted(() => {
-  if (!hasAddresses.value) {
+// Fetch addresses on mount
+onMounted(async () => {
+  await fetchAddresses()
+  
+  // If no addresses after loading, redirect to address form
+  if (!hasAddresses.value && !isLoading.value) {
     router.replace('/address')
   }
 })

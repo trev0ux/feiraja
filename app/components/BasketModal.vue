@@ -9,7 +9,7 @@
     
     <!-- Modal Content -->
     <div
-      class="relative bg-white rounded-t-xl md:rounded-xl w-full max-w-md max-h-[80vh] overflow-hidden"
+      class="relative bg-white flex flex-col rounded-t-xl md:rounded-xl w-full max-w-md max-h-[80vh] overflow-hidden"
       @click.stop
     >
       <!-- Header -->
@@ -98,12 +98,20 @@
           <span class="font-bold text-lg text-aux-orange">R$ {{ totalPrice.toFixed(2) }}</span>
         </div>
         
-        <button 
-          @click="goToCheckout"
-          class="w-full bg-aux-orange text-white py-3 rounded-lg font-semibold hover:bg-opacity-90 transition-colors"
-        >
-          Finalizar Pedido
-        </button>
+        <div class="flex gap-2">
+          <button 
+            @click="clearCart"
+            class="flex-1 bg-gray-100 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-200 transition-colors"
+          >
+            Limpar Carrinho
+          </button>
+          <button 
+            @click="goToCheckout"
+            class="flex-2 bg-aux-orange text-white py-3 px-6 rounded-lg font-semibold hover:bg-opacity-90 transition-colors"
+          >
+            Finalizar Pedido
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -123,11 +131,17 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['close', 'updateQuantity'])
+const emit = defineEmits(['close', 'updateQuantity', 'clearCart'])
 const router = useRouter()
 
 const closeModal = () => {
   emit('close')
+}
+
+const clearCart = () => {
+  if (confirm('Tem certeza que deseja limpar o carrinho?')) {
+    emit('clearCart')
+  }
 }
 
 const updateQuantity = (productId, newQuantity) => {

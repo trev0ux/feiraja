@@ -20,8 +20,14 @@
       </div>
     </div>
 
+    <!-- Loading State -->
+    <div v-if="loading" class="text-center py-12">
+      <div class="inline-block animate-spin rounded-full h-8 w-8 border-2 border-aux-orange border-t-transparent mb-4"></div>
+      <p class="text-gray-600">Carregando produto...</p>
+    </div>
+
     <!-- Form -->
-    <form class="space-y-6" @submit.prevent="saveProduct">
+    <form v-else class="space-y-6" @submit.prevent="saveProduct">
       <div class="bg-white rounded-lg shadow p-6">
         <!-- Basic Information -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -166,6 +172,9 @@
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-aux-orange focus:border-aux-orange"
               placeholder="Ex: Ibiúna, São Paulo"
             >
+            <p v-if="form.origin.producerId && form.origin.location" class="text-xs text-green-600 mt-1">
+              ✓ Preenchido automaticamente do produtor selecionado
+            </p>
           </div>
 
           <div>
@@ -204,7 +213,12 @@
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-aux-orange focus:border-aux-orange"
               placeholder="Ex: Orgânico IBD, Selo SisOrg (separar por vírgula)"
             >
-            <p class="text-xs text-gray-500 mt-1">Separe múltiplas certificações por vírgula</p>
+            <div class="flex justify-between items-start mt-1">
+              <p class="text-xs text-gray-500">Separe múltiplas certificações por vírgula</p>
+              <p v-if="form.origin.producerId && form.origin.certifications.length > 0" class="text-xs text-green-600">
+                ✓ Preenchido automaticamente
+              </p>
+            </div>
           </div>
 
           <div class="lg:col-span-2">
@@ -218,6 +232,9 @@
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-aux-orange focus:border-aux-orange resize-none"
               placeholder="Conte a história do produtor, métodos de cultivo, tradições familiares..."
             />
+            <p v-if="form.origin.producerId && form.origin.story" class="text-xs text-green-600 mt-1">
+              ✓ Preenchido automaticamente do produtor selecionado
+            </p>
           </div>
         </div>
       </div>
@@ -419,7 +436,10 @@ const route = useRoute()
 const router = useRouter()
 
 const isNewProduct = computed(() => route.params.id === 'new')
-const productId = computed(() => parseInt(route.params.id))
+const productId = computed(() => {
+  const id = parseInt(route.params.id)
+  return isNaN(id) ? null : id
+})
 
 const loading = ref(false)
 const saving = ref(false)
@@ -488,7 +508,7 @@ const fetchCategories = async () => {
 const fetchProducers = async () => {
   try {
     const { $config } = useNuxtApp()
-    const response = await $fetch(`${$config.public.apiBaseUrl}/api/producers?isActive=true`)
+    const response = await $fetch(`${$config.public.apiBaseUrl}/api/producers?isActive=true&limit=100`)
     producers.value = response.producers || []
   } catch (error) {
     console.error('Error fetching producers:', error)
@@ -499,19 +519,33 @@ const fetchProducers = async () => {
 const fetchProduct = async () => {
   if (isNewProduct.value) return
 
+  // Validate product ID
+  if (!productId.value) {
+    console.error('❌ Invalid product ID:', route.params.id)
+    alert('ID do produto inválido.')
+    router.push('/admin/products')
+    return
+  }
+
   loading.value = true
   try {
+    console.log('🔍 Fetching product with ID:', productId.value)
+    
     const { $config } = useNuxtApp()
-    const response = await $fetch(`${$config.public.apiBaseUrl}/api/products?page=1&limit=100`)
-    const product = response.products.find(p => p.id === productId.value)
+    
+    // Fetch product by ID directly
+    const product = await $fetch(`${$config.public.apiBaseUrl}/api/products/${productId.value}`)
+    
+    console.log('📦 Fetched product:', product)
     
     if (product) {
+      // Populate form with product data
       form.value = {
-        name: product.name,
-        description: product.description,
-        price: product.price,
-        categoryId: product.categoryId,
-        inStock: product.inStock,
+        name: product.name || '',
+        description: product.description || '',
+        price: product.price || '',
+        categoryId: product.categoryId || '',
+        inStock: product.inStock ?? true,
         origin: {
           producerId: product.origin?.producerId || '',
           producer: product.origin?.producer || '',
@@ -531,15 +565,24 @@ const fetchProduct = async () => {
         }
       }
       
+      // Set current image
       if (product.image) {
         currentImage.value = product.image
       }
+      
+      console.log('✅ Product form populated successfully')
     } else {
       throw new Error('Product not found')
     }
   } catch (error) {
-    console.error('Error fetching product:', error)
-    alert('Produto não encontrado')
+    console.error('❌ Error fetching product:', error)
+    
+    if (error.status === 404) {
+      alert('Produto não encontrado.')
+    } else {
+      alert('Erro ao carregar produto. Tente novamente.')
+    }
+    
     router.push('/admin/products')
   } finally {
     loading.value = false
@@ -589,6 +632,39 @@ const removeCurrentImage = () => {
   // Note: In a real app, you might want to flag this for deletion on save
 }
 
+// Watch for producer selection and autofill related fields
+watch(() => form.value.origin.producerId, (newProducerId) => {
+  if (newProducerId) {
+    const selectedProducer = producers.value.find(p => p.id === parseInt(newProducerId))
+    if (selectedProducer) {
+      // Autofill location if not already filled
+      if (!form.value.origin.location && selectedProducer.location) {
+        form.value.origin.location = selectedProducer.location
+      }
+      
+      // Autofill producer name
+      form.value.origin.producer = selectedProducer.name
+      
+      // Autofill story if not already filled
+      if (!form.value.origin.story && selectedProducer.story) {
+        form.value.origin.story = selectedProducer.story
+      }
+      
+      // Autofill certifications if not already filled
+      if (form.value.origin.certifications.length === 0 && selectedProducer.certifications) {
+        if (Array.isArray(selectedProducer.certifications)) {
+          form.value.origin.certifications = [...selectedProducer.certifications]
+        } else if (typeof selectedProducer.certifications === 'string') {
+          form.value.origin.certifications = selectedProducer.certifications.split(',').map(cert => cert.trim())
+        }
+      }
+    }
+  } else {
+    // Clear autofilled fields when no producer is selected
+    form.value.origin.producer = ''
+  }
+})
+
 // Save product
 const saveProduct = async () => {
   saving.value = true
@@ -596,11 +672,30 @@ const saveProduct = async () => {
   try {
     const token = useCookie('admin-token')
     
+    // Check if user is authenticated
+    if (!token.value) {
+      alert('Você precisa estar logado para realizar esta ação.')
+      router.push('/admin/login')
+      return
+    }
+    
     // Validate required fields
-    if (!form.value.name || !form.value.price || !form.value.categoryId) {
+    if (!form.value.name?.trim() || !form.value.price || !form.value.categoryId) {
       alert('Por favor, preencha todos os campos obrigatórios (Nome, Preço e Categoria)')
       return
     }
+    
+    // Validate price
+    if (isNaN(parseFloat(form.value.price)) || parseFloat(form.value.price) <= 0) {
+      alert('Por favor, insira um preço válido.')
+      return
+    }
+    
+    console.log('💾 Saving product...', {
+      isNew: isNewProduct.value,
+      productId: productId.value,
+      formData: form.value
+    })
     
     // Create FormData for file upload
     const formData = new FormData()
@@ -651,15 +746,23 @@ const saveProduct = async () => {
     console.log('Product saved successfully:', response)
     router.push('/admin/products')
   } catch (error) {
-    console.error('Error saving product:', error)
+    console.error('❌ Error saving product:', error)
     
-    if (error.status === 401) {
+    // Handle different error types
+    if (error.status === 401 || error.statusCode === 401) {
       alert('Sessão expirada. Faça login novamente.')
       router.push('/admin/login')
-    } else if (error.status === 400) {
-      alert('Dados inválidos. Verifique se todos os campos estão preenchidos corretamente.')
+    } else if (error.status === 400 || error.statusCode === 400) {
+      const errorMessage = error.data?.message || error.data?.error || 'Dados inválidos. Verifique se todos os campos estão preenchidos corretamente.'
+      alert(errorMessage)
+    } else if (error.status === 404 || error.statusCode === 404) {
+      alert('Produto não encontrado.')
+      router.push('/admin/products')
+    } else if (error.status === 500 || error.statusCode === 500) {
+      alert('Erro interno do servidor. Tente novamente mais tarde.')
     } else {
-      alert('Erro ao salvar produto. Tente novamente.')
+      const errorMessage = error.data?.message || error.message || 'Erro ao salvar produto. Tente novamente.'
+      alert(errorMessage)
     }
   } finally {
     saving.value = false

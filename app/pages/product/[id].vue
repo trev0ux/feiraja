@@ -66,6 +66,14 @@
             <div>
               <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ product.name }}</h1>
               <p class="text-lg text-gray-600 mb-4">{{ product.description }}</p>
+              
+              <!-- Category -->
+              <div v-if="product.category" class="mb-4">
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-aux-orange bg-opacity-10 text-aux-orange">
+                  {{ product.category }}
+                </span>
+              </div>
+              
               <div class="flex items-center justify-between">
                 <span class="text-3xl font-bold text-aux-orange">R$ {{ product.price.toFixed(2) }}</span>
                 <span
@@ -104,9 +112,22 @@
                   </button>
                 </div>
               </div>
-              <div v-if="quantity > 0" class="text-right text-lg font-semibold text-gray-900">
+              <div v-if="quantity > 0" class="text-right text-lg font-semibold text-gray-900 mb-4">
                 Total: R$ {{ (product.price * quantity).toFixed(2) }}
               </div>
+              
+              <!-- Add to Cart Button -->
+              <button
+                v-if="quantity > 0 && product.inStock"
+                class="w-full bg-aux-orange text-white py-3 px-4 rounded-lg font-semibold hover:bg-aux-orange/90 transition-colors flex items-center justify-center gap-2"
+                @click="() => {}"
+                disabled
+              >
+                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                Adicionado ao Carrinho ({{ quantity }})
+              </button>
             </div>
 
             <!-- Origin Information -->
@@ -168,7 +189,7 @@
                 Informação Nutricional
               </h3>
               
-              <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+              <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
                 <div>
                   <dt class="text-sm font-medium text-gray-500">Porção</dt>
                   <dd class="text-base font-semibold text-gray-900">{{ product.nutritionalInfo.portion }}</dd>
@@ -184,6 +205,10 @@
                 <div>
                   <dt class="text-sm font-medium text-gray-500">Fibras</dt>
                   <dd class="text-base font-semibold text-gray-900">{{ product.nutritionalInfo.fiber }}</dd>
+                </div>
+                <div>
+                  <dt class="text-sm font-medium text-gray-500">Proteína</dt>
+                  <dd class="text-base font-semibold text-gray-900">{{ product.nutritionalInfo.protein }}</dd>
                 </div>
               </div>
 
@@ -218,14 +243,26 @@ const loading = ref(true)
 const product = ref(null)
 const quantity = ref(0)
 
+// Cart functionality
+const addToBasket = inject('addToBasket')
+const getBasketItems = inject('getBasketItems')
+
+// Get current quantity from cart
+const currentCartQuantity = computed(() => {
+  if (!product.value) return 0
+  const basketItems = getBasketItems()
+  const existingItem = basketItems.find(item => item.product.id === product.value.id)
+  return existingItem ? existingItem.quantity : 0
+})
+
 // Fetch product details
 const fetchProduct = async () => {
   loading.value = true
   try {
-    const response = await $fetch(`${$config.public.apiBaseUrl}/api/products`)
-    product.value = response.products.find(p => p.id === productId.value)
+    product.value = await $fetch(`${$config.public.apiBaseUrl}/api/products/${productId.value}`)
   } catch (error) {
     console.error('Error fetching product:', error)
+    product.value = null
   } finally {
     loading.value = false
   }
@@ -240,13 +277,22 @@ const formatDate = (dateString) => {
 // Quantity controls
 const increaseQuantity = () => {
   quantity.value++
+  addToBasket(product.value, quantity.value)
 }
 
 const decreaseQuantity = () => {
   if (quantity.value > 0) {
     quantity.value--
+    addToBasket(product.value, quantity.value)
   }
 }
+
+// Sync local quantity with cart quantity when product loads
+watch([product, currentCartQuantity], ([newProduct, cartQty]) => {
+  if (newProduct && cartQty !== undefined) {
+    quantity.value = cartQty
+  }
+}, { immediate: true })
 
 // Navigation
 const goBack = () => {

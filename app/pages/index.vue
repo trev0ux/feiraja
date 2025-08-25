@@ -1,7 +1,8 @@
 <template>
-  <article>
+  <div class="min-h-screen bg-gray-50">
+    <!-- Header -->
     <div class="bg-aux-light-yellow">
-      <section class="py-4 container">
+      <section class="py-4 container mx-auto px-4">
         <h2 class="text-aux-black font-bold text-[32px]">Bom dia,</h2>
         <p class="font-light text-aux-black text-base">Alimentos direto da roça para você</p>
         <div class="flex items-center relative mt-6 lg:max-w-[320px]">
@@ -10,33 +11,24 @@
             type="search"
             placeholder="Pesquisar por nome"
             class="border border-aux-grey rounded-lg bg-white px-4 py-2 w-full"
-            @input="onSearch"
+            @input="handleSearch"
           />
           <SearchIcon class="absolute right-[15px]" />
         </div>
       </section>
-      <section class="border-t border-aux-grey border-b pt-4">
-        <div class="container">
-          <CategoriesSlider @category-selected="onCategorySelected" />
-        </div>
-      </section>
     </div>
+
     <!-- Products Section -->
-    <section class="py-6">
-      <div class="container">
-        <div class="flex items-center justify-between mb-4">
+    <section class="py-8">
+      <div class="container mx-auto px-4">
+        <!-- Products Count -->
+        <div class="flex items-center justify-between mb-6">
           <div>
             <h3 class="text-aux-black font-semibold text-lg">
-              {{ searchTerm ? `Resultados para "${searchTerm}"` : selectedCategory }}
+              {{ searchTerm ? `Resultados para "${searchTerm}"` : 'Todos os Produtos' }}
             </h3>
             <p class="text-gray-600 text-sm">
-              {{ displayedProducts.length }}{{ hasMoreProducts ? '+' : '' }} de
-              {{ allFilteredProducts.length }} produto{{
-                allFilteredProducts.length !== 1 ? 's' : ''
-              }}
-              <span v-if="searchTerm && selectedCategory !== 'Todas'" class="text-aux-orange">
-                em {{ selectedCategory }}
-              </span>
+              {{ products.length }} produto{{ products.length !== 1 ? 's' : '' }} encontrado{{ products.length !== 1 ? 's' : '' }}
             </p>
           </div>
           <button
@@ -47,220 +39,175 @@
             Limpar busca
           </button>
         </div>
-        <!-- Empty State -->
-        <div v-if="allFilteredProducts.length === 0" class="text-center py-12">
-          <div
-            class="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center"
+
+        <!-- Loading State -->
+        <div v-if="loading" class="text-center py-12">
+          <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-aux-orange border-t-transparent mb-4"></div>
+          <h3 class="text-gray-900 font-semibold mb-2">Carregando produtos...</h3>
+          <p class="text-gray-600">Aguarde um momento</p>
+        </div>
+
+        <!-- Error State -->
+        <div v-else-if="error" class="text-center py-12">
+          <div class="w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
+            <svg class="h-8 w-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h3 class="text-gray-900 font-semibold mb-2">Ops! Algo deu errado</h3>
+          <p class="text-gray-600 mb-4">{{ error }}</p>
+          <button
+            @click="loadProducts"
+            class="bg-aux-orange text-white px-6 py-2 rounded-lg font-semibold hover:bg-opacity-90 transition-colors"
           >
+            Tentar Novamente
+          </button>
+        </div>
+
+        <!-- Empty State -->
+        <div v-else-if="!loading && products.length === 0" class="text-center py-12">
+          <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
             <SearchIcon color="#9CA3AF" />
           </div>
           <h3 class="text-gray-900 font-semibold mb-2">Nenhum produto encontrado</h3>
           <p class="text-gray-600 mb-4">
-            {{
-              searchTerm
-                ? `Não encontramos produtos com "${searchTerm}"`
-                : `Não há produtos na categoria "${selectedCategory}"`
-            }}
+            {{ searchTerm ? `Não encontramos produtos com "${searchTerm}"` : 'Nenhum produto disponível no momento' }}
           </p>
-          <div class="space-x-4">
-            <button
-              v-if="searchTerm"
-              @click="clearSearch"
-              class="text-aux-orange hover:text-opacity-80"
-            >
-              Limpar busca
-            </button>
-            <button
-              v-if="selectedCategory !== 'Todas'"
-              @click="selectedCategory = 'Todas'"
-              class="text-aux-orange hover:text-opacity-80"
-            >
-              Ver todos os produtos
-            </button>
-          </div>
+          <button
+            v-if="searchTerm"
+            @click="clearSearch"
+            class="text-aux-orange hover:text-opacity-80"
+          >
+            Limpar busca
+          </button>
         </div>
 
         <!-- Products Grid -->
-        <div v-else>
-          <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            <ProductCard
-              v-for="product in displayedProducts"
-              :key="product.id"
-              :product="product"
-              @quantity-changed="onQuantityChanged"
-            />
-          </div>
-
-          <!-- Loading Indicator -->
-          <div v-if="isLoading" class="flex justify-center items-center py-8">
-            <div class="flex items-center space-x-2 text-aux-orange">
-              <div
-                class="animate-spin w-6 h-6 border-2 border-aux-orange border-t-transparent rounded-full"
-              ></div>
-              <span class="text-sm">Carregando mais produtos...</span>
-            </div>
-          </div>
-
-          <!-- Load More Button (fallback for manual loading) -->
-          <div v-else-if="hasMoreProducts" class="flex justify-center py-8">
-            <button
-              @click="loadMoreProducts"
-              class="bg-aux-orange text-white px-6 py-3 rounded-lg font-semibold hover:bg-opacity-90 transition-colors"
-            >
-              Carregar Mais Produtos
-            </button>
-          </div>
-
-          <!-- End of Results -->
-          <div v-else-if="displayedProducts.length > 8" class="text-center py-8">
-            <p class="text-gray-500 text-sm">
-              🎉 Você viu todos os {{ allFilteredProducts.length }} produtos!
-            </p>
-          </div>
+        <div v-else class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <ProductCard
+            v-for="product in products"
+            :key="product.id"
+            :product="product"
+            @quantity-changed="handleQuantityChange"
+          />
         </div>
       </div>
     </section>
-  </article>
+  </div>
 </template>
 
-<script lang="ts" setup>
+<script setup>
 import SearchIcon from '~/components/icons/SearchIcon.vue'
-import CategoriesSlider from '~/components/CategoriesSlider.vue'
 import ProductCard from '~/components/ProductCard.vue'
-import { useApi } from '../composables/useApi'
 
-const { apiCall } = useApi()
-const selectedCategory = ref('Todas')
-const searchTerm = ref('')
-const displayedProductsCount = ref(8) // Start with 8 products
-const isLoading = ref(false)
-const hasMoreProducts = ref(true)
-
-const onCategorySelected = category => {
-  selectedCategory.value = category.name
-  // Reset displayed count when category changes
-  displayedProductsCount.value = 8
-  hasMoreProducts.value = true
-  fetchProducts()
-}
-
-const onSearch = () => {
-  // Reset displayed count when searching
-  displayedProductsCount.value = 8
-  hasMoreProducts.value = true
-  fetchProducts()
-}
-
-const clearSearch = () => {
-  searchTerm.value = ''
-  displayedProductsCount.value = 8
-  hasMoreProducts.value = true
-  fetchProducts()
-}
-
+// Reactive state
 const allProducts = ref([])
 const loading = ref(false)
+const error = ref('')
+const searchTerm = ref('')
 
-const allFilteredProducts = computed(() => {
-  let products = allProducts.value
-
-  // Filter by category
-  if (selectedCategory.value !== 'Todas') {
-    products = products.filter(product => product.category === selectedCategory.value)
+// Computed filtered products
+const products = computed(() => {
+  if (!searchTerm.value.trim()) {
+    return allProducts.value
   }
-
-  // Filter by search term
-  if (searchTerm.value.trim()) {
-    const search = searchTerm.value.toLowerCase().trim()
-    products = products.filter(
-      product =>
-        product.name.toLowerCase().includes(search) ||
-        product.description.toLowerCase().includes(search) ||
-        product.category.toLowerCase().includes(search)
-    )
-  }
-
-  return products
+  
+  const search = searchTerm.value.toLowerCase().trim()
+  return allProducts.value.filter(product => 
+    product.name?.toLowerCase().includes(search) ||
+    product.description?.toLowerCase().includes(search) ||
+    product.category?.toLowerCase().includes(search)
+  )
 })
 
-const displayedProducts = computed(() => {
-  return allFilteredProducts.value.slice(0, displayedProductsCount.value)
-})
-
-// Watch for changes in filtered products to update hasMoreProducts
-watch(
-  allFilteredProducts,
-  newProducts => {
-    hasMoreProducts.value = displayedProductsCount.value < newProducts.length
-  },
-  { immediate: true }
-)
-
-// Fetch products from API
-const fetchProducts = async () => {
+// Load products function
+const loadProducts = async () => {
   loading.value = true
+  error.value = ''
+  
   try {
-    const params = new URLSearchParams({
-      page: 1,
-      limit: 100, // Get more products for infinite scroll
-    })
-
-    if (selectedCategory.value !== 'Todas') {
-      params.append('category', selectedCategory.value)
+    console.log('🔍 Loading products from API...')
+    
+    const config = useRuntimeConfig()
+    const apiUrl = `${config.public.apiBaseUrl}/api/products`
+    
+    console.log('🌐 API URL:', apiUrl)
+    
+    const response = await $fetch(apiUrl)
+    console.log('📦 Raw API Response:', response)
+    
+    if (response && response.products && Array.isArray(response.products)) {
+      // API returns {products: [...]}
+      allProducts.value = response.products
+      console.log('✅ Products loaded successfully:', response.products.length)
+    } else if (response && Array.isArray(response)) {
+      // API returns products directly as array
+      allProducts.value = response
+      console.log('✅ Products loaded (direct array):', response.length)
+    } else {
+      console.warn('⚠️ Unexpected API response structure:', response)
+      throw new Error('Formato de resposta inesperado')
     }
-
-    if (searchTerm.value.trim()) {
-      params.append('search', searchTerm.value)
-    }
-
-    const response = await apiCall(`/api/products?${params}`)
-    allProducts.value = response.products
-  } catch (error) {
-    console.error('Error fetching products:', error)
+    
+  } catch (err) {
+    console.error('❌ Error loading products:', err)
+    error.value = 'Não foi possível carregar os produtos. Verifique sua conexão.'
     allProducts.value = []
   } finally {
     loading.value = false
   }
 }
 
-const loadMoreProducts = async () => {
-  if (isLoading.value || !hasMoreProducts.value) return
-
-  isLoading.value = true
-
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 800))
-
-  const newCount = displayedProductsCount.value + 8
-  displayedProductsCount.value = Math.min(newCount, allFilteredProducts.value.length)
-  hasMoreProducts.value = displayedProductsCount.value < allFilteredProducts.value.length
-
-  isLoading.value = false
+// Search handling
+const handleSearch = () => {
+  // Trigger reactivity for search filtering
+  console.log('🔍 Searching for:', searchTerm.value)
 }
 
-const onQuantityChanged = data => {
-  console.log('Product quantity changed:', data)
+const clearSearch = () => {
+  searchTerm.value = ''
+  console.log('🗑️ Search cleared')
 }
 
-// Infinite scroll detection
-const handleScroll = () => {
-  const scrollPosition = window.scrollY + window.innerHeight
-  const documentHeight = document.documentElement.scrollHeight
-
-  // Load more when user is 200px from bottom
-  if (scrollPosition >= documentHeight - 200 && !isLoading.value && hasMoreProducts.value) {
-    loadMoreProducts()
-  }
+// Quantity change handling
+const handleQuantityChange = (data) => {
+  console.log('📦 Product quantity changed:', data)
 }
 
+// Load products on mount
 onMounted(() => {
-  window.addEventListener('scroll', handleScroll)
-  fetchProducts()
+  console.log('🚀 Component mounted, loading products...')
+  loadProducts()
 })
 
-onUnmounted(() => {
-  window.removeEventListener('scroll', handleScroll)
+// SEO
+useHead({
+  title: 'Feiraja - Produtos Frescos da Roça',
+  meta: [
+    { name: 'description', content: 'Encontre os melhores produtos frescos direto da roça.' }
+  ]
 })
 </script>
 
-<style></style>
+<style scoped>
+.container {
+  max-width: 1200px;
+}
+
+/* Ensure proper grid spacing */
+.grid {
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .grid {
+    gap: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .grid {
+    gap: 2rem;
+  }
+}
+</style>

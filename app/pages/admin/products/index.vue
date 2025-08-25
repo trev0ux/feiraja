@@ -19,22 +19,28 @@
       <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Buscar</label>
-          <input
-            v-model="filters.search"
-            type="text"
-            placeholder="Nome do produto..."
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-aux-orange focus:border-aux-orange"
-            @input="debouncedSearch"
-          >
+          <div class="relative">
+            <input
+              v-model="filters.search"
+              type="text"
+              placeholder="Nome do produto..."
+              class="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:ring-aux-orange focus:border-aux-orange"
+              @input="debouncedSearch"
+            >
+            <div v-if="searchLoading" class="absolute inset-y-0 right-0 flex items-center pr-3">
+              <div class="animate-spin w-4 h-4 border-2 border-aux-orange border-t-transparent rounded-full"/>
+            </div>
+          </div>
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
           <select
             v-model="filters.category"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-aux-orange focus:border-aux-orange"
+            :disabled="categoriesLoading"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-aux-orange focus:border-aux-orange disabled:bg-gray-100 disabled:cursor-not-allowed"
             @change="fetchProducts"
           >
-            <option value="">Todas as categorias</option>
+            <option value="">{{ categoriesLoading ? 'Carregando categorias...' : 'Todas as categorias' }}</option>
             <option
               v-for="category in categories"
               :key="category.id"
@@ -69,10 +75,63 @@
 
     <!-- Products Table -->
     <div class="bg-white rounded-lg shadow overflow-hidden">
-      <div v-if="loading" class="p-6 text-center">
-        <div class="inline-flex items-center">
-          <div class="animate-spin w-6 h-6 border-2 border-aux-orange border-t-transparent rounded-full mr-3"/>
-          Carregando produtos...
+      <!-- Loading Skeleton -->
+      <div v-if="loading">
+        <!-- Table Header Skeleton -->
+        <div class="border-b border-gray-200 bg-gray-50 px-6 py-3">
+          <div class="grid grid-cols-5 gap-4">
+            <div class="h-4 bg-gray-200 rounded animate-pulse"/>
+            <div class="h-4 bg-gray-200 rounded animate-pulse"/>
+            <div class="h-4 bg-gray-200 rounded animate-pulse"/>
+            <div class="h-4 bg-gray-200 rounded animate-pulse"/>
+            <div class="h-4 bg-gray-200 rounded animate-pulse"/>
+          </div>
+        </div>
+        
+        <!-- Product Rows Skeleton -->
+        <div v-for="i in 8" :key="i" class="border-b border-gray-200 px-6 py-4">
+          <div class="flex items-center space-x-4">
+            <!-- Product Image Skeleton -->
+            <div class="flex-shrink-0">
+              <div class="h-12 w-12 bg-gray-200 rounded-lg animate-pulse"/>
+            </div>
+            
+            <!-- Product Info -->
+            <div class="flex-1 grid grid-cols-4 gap-4 items-center">
+              <!-- Name and Description -->
+              <div class="space-y-2">
+                <div class="h-4 bg-gray-200 rounded animate-pulse w-3/4"/>
+                <div class="h-3 bg-gray-100 rounded animate-pulse w-full"/>
+              </div>
+              
+              <!-- Category -->
+              <div>
+                <div class="h-6 bg-gray-200 rounded-full animate-pulse w-20"/>
+              </div>
+              
+              <!-- Price -->
+              <div>
+                <div class="h-4 bg-gray-200 rounded animate-pulse w-16"/>
+              </div>
+              
+              <!-- Status and Actions -->
+              <div class="flex items-center justify-between">
+                <div class="h-6 bg-gray-200 rounded-full animate-pulse w-16"/>
+                <div class="flex space-x-2">
+                  <div class="h-4 bg-gray-200 rounded animate-pulse w-12"/>
+                  <div class="h-4 bg-gray-200 rounded animate-pulse w-12"/>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Loading Status -->
+        <div class="px-6 py-4 border-t border-gray-200 bg-gray-50">
+          <div class="flex items-center justify-center text-sm text-gray-500">
+            <div class="animate-spin w-4 h-4 border-2 border-aux-orange border-t-transparent rounded-full mr-2"/>
+            Carregando produtos...
+          </div>
         </div>
       </div>
 
@@ -252,6 +311,8 @@ definePageMeta({
 })
 
 const loading = ref(false)
+const categoriesLoading = ref(false)
+const searchLoading = ref(false)
 const products = ref([])
 const categories = ref([])
 
@@ -315,11 +376,14 @@ const fetchProducts = async () => {
 
 // Fetch categories
 const fetchCategories = async () => {
+  categoriesLoading.value = true
   try {
     const { $config } = useNuxtApp()
     categories.value = await $fetch(`${$config.public.apiBaseUrl}/api/categories`)
   } catch (error) {
     console.error('Error fetching categories:', error)
+  } finally {
+    categoriesLoading.value = false
   }
 }
 
@@ -327,14 +391,18 @@ const fetchCategories = async () => {
 let searchTimeout
 const debouncedSearch = () => {
   clearTimeout(searchTimeout)
-  searchTimeout = setTimeout(() => {
+  searchLoading.value = true
+  searchTimeout = setTimeout(async () => {
     pagination.value.currentPage = 1
-    fetchProducts()
+    await fetchProducts()
+    searchLoading.value = false
   }, 500)
 }
 
 // Clear filters
 const clearFilters = () => {
+  clearTimeout(searchTimeout)
+  searchLoading.value = false
   filters.value = {
     search: '',
     category: '',

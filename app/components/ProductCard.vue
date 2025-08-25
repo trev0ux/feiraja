@@ -15,15 +15,23 @@
       </NuxtLink>
       
       <!-- View Details Icon -->
-      <div class="absolute top-2 right-2 bg-black bg-opacity-50 rounded-full p-1 opacity-0 hover:opacity-100 transition-opacity z-10 pointer-events-none">
+      <div class="top-2 right-2 bg-black bg-opacity-50 absolute rounded-full p-1 hover:opacity-100 transition-opacity z-10 pointer-events-none">
         <svg class="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
         </svg>
       </div>
+    </div>
 
-      <!-- Quantity Controls (positioned above the link) -->
-      <div class="flex items-center justify-between absolute right-[8px] bottom-[8px] z-20">
+    <!-- Product Info -->
+    <div class="mb-3">
+            <!-- Quantity Controls (positioned above the link) -->
+      <NuxtLink :to="`/product/${product.id}`" class="block">
+        <h3 class="font-semibold text-aux-black text-sm mb-1 hover:text-aux-orange transition-colors">{{ product.name }}</h3>
+      </NuxtLink>
+      <div class="flex justify-between items-center">
+      <p class="font-bold text-aux-orange text-lg">R$ {{ product.price.toFixed(2) }}</p>
+            <div class="flex items-center justify-between z-20">
         <!-- Plus icon only (when quantity is 0) -->
         <button
           v-if="quantity === 0"
@@ -86,14 +94,7 @@
           </button>
         </div>
       </div>
-    </div>
-
-    <!-- Product Info -->
-    <div class="mb-3">
-      <NuxtLink :to="`/product/${product.id}`" class="block">
-        <h3 class="font-semibold text-aux-black text-sm mb-1 hover:text-aux-orange transition-colors">{{ product.name }}</h3>
-      </NuxtLink>
-      <p class="font-bold text-aux-orange text-lg">R$ {{ product.price.toFixed(2) }}</p>
+      </div>
     </div>
   </div>
 </template>
@@ -110,6 +111,23 @@ const emit = defineEmits(['quantityChanged'])
 
 const quantity = ref(0)
 const addToBasket = inject('addToBasket')
+const getBasketItems = inject('getBasketItems')
+
+// Sync with basket state on mount and when basket changes
+const syncWithBasket = () => {
+  const basketItems = getBasketItems()
+  const existingItem = basketItems.find(item => item.product.id === props.product.id)
+  if (existingItem) {
+    quantity.value = existingItem.quantity
+  } else {
+    quantity.value = 0
+  }
+}
+
+// Sync on component mount
+onMounted(() => {
+  syncWithBasket()
+})
 
 const addItem = () => {
   quantity.value++
