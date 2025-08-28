@@ -1,5 +1,32 @@
 <template>
   <div class="min-h-screen bg-gray-50">
+    <!-- Returning User Offer Banner -->
+    <div v-if="showOfferBanner" class="bg-gradient-to-r from-aux-orange to-orange-600 text-white">
+      <div class="container mx-auto px-4 py-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-3">
+            <div class="bg-white bg-opacity-20 rounded-full p-1">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 2L13.09 8.26L20 9L15 14.74L16.18 22L10 18.27L3.82 22L5 14.74L0 9L6.91 8.26L10 2Z" clip-rule="evenodd"/>
+              </svg>
+            </div>
+            <div>
+              <p class="font-semibold">Bem-vindo de volta! 🎉</p>
+              <p class="text-sm opacity-90">{{ offerMessage }}</p>
+            </div>
+          </div>
+          <button 
+            @click="dismissOffer"
+            class="text-white hover:text-opacity-80 transition-colors"
+          >
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Header -->
     <div class="bg-aux-light-yellow">
       <section class="py-4 container mx-auto px-4">
@@ -179,6 +206,29 @@ onMounted(() => {
   console.log('🚀 Component mounted, loading products...')
   loadProducts()
 })
+
+// Offer banner logic for returning users
+const { getUserVisitData } = useUserTracking()
+const showOfferBanner = ref(false)
+const offerMessage = ref('')
+
+onMounted(() => {
+  const visitData = getUserVisitData()
+  if (visitData && visitData.visitCount > 1) {
+    showOfferBanner.value = true
+    const messages = [
+      'Descontos especiais hoje! Confira nossa seleção premium.',
+      'Frete grátis em pedidos acima de R$ 50 nesta semana!',
+      'Novos produtos frescos chegaram! Veja as novidades.',
+      '10% de desconto para clientes fiéis como você!'
+    ]
+    offerMessage.value = messages[Math.floor(Math.random() * messages.length)]
+  }
+})
+
+const dismissOffer = () => {
+  showOfferBanner.value = false
+}
 
 // SEO
 useHead({
