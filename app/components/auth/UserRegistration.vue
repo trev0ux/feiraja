@@ -260,7 +260,7 @@ const fetchAddressFromCep = async () => {
     }
     
     // Check if we deliver to this area (São Paulo for now)
-    if (data.uf !== 'SP') {
+    if (data.uf !== 'BA') {
       addressError.value = 'Ainda não entregamos nesta região'
       return
     }

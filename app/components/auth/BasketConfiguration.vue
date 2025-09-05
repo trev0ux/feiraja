@@ -53,7 +53,7 @@
                       Aproximadamente {{ box.itemCount }} itens
                     </span>
                     <span class="block text-lg font-bold text-aux-orange mt-1">
-                      R$ {{ box.basePrice.toFixed(2) }}
+                      R$ {{ (box.basePrice && typeof box.basePrice === 'number') ? box.basePrice.toFixed(2) : '0.00' }}
                     </span>
                   </div>
                 </div>
@@ -229,7 +229,24 @@ const isFormValid = computed(() => {
 onMounted(async () => {
   try {
     const response = await apiCall('/api/admin/box-prices')
-    boxPrices.value = response
+    console.log('API response:', response)
+    // Check if response is an array or if it's nested
+    if (Array.isArray(response)) {
+      boxPrices.value = response
+    } else if (response.data && Array.isArray(response.data)) {
+      boxPrices.value = response.data
+    } else if (response.boxPrices && Array.isArray(response.boxPrices)) {
+      boxPrices.value = response.boxPrices
+    } else {
+      console.error('Unexpected response format:', response)
+      // Use fallback data
+      boxPrices.value = [
+        { id: 1, profileType: 1, name: '1 pessoa', basePrice: 35.0, itemCount: 8 },
+        { id: 2, profileType: 2, name: '2 pessoas', basePrice: 55.0, itemCount: 14 },
+        { id: 3, profileType: 3, name: '3-4 pessoas', basePrice: 75.0, itemCount: 20 },
+        { id: 4, profileType: 5, name: '5+ pessoas', basePrice: 95.0, itemCount: 26 }
+      ]
+    }
   } catch (err) {
     console.error('Failed to fetch box prices:', err)
     // Fallback data
