@@ -28,8 +28,9 @@
             <!-- Quantity Controls (positioned above the link) -->
       <NuxtLink :to="`/product/${product.id}`" class="block">
         <h3 class="font-semibold text-aux-black text-sm mb-1 hover:text-aux-orange transition-colors">{{ product.name }}</h3>
+        <p class="text-gray-600 text-xs mb-2 line-clamp-2">{{ product.description || 'Produto fresco e saboroso' }}</p>
       </NuxtLink>
-      <div>
+      <div class="flex flex-col gap-2">
       <p class="font-bold text-aux-orange text-lg">R$ {{ product.price.toFixed(2) }}</p>
             <div class="flex items-center justify-between z-20">
         <!-- Plus icon only (when quantity is 0) -->
