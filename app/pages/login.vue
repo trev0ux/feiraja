@@ -66,8 +66,12 @@ definePageMeta({
 })
 
 const router = useRouter()
+const route = useRoute()
 const currentStep = ref('login')
 const registrationData = ref({})
+
+// Get redirect URL from query params
+const redirectTo = computed(() => route.query.redirect || '/')
 
 // Handle existing user authentication
 const handleUserAuthenticated = (user) => {
@@ -83,8 +87,8 @@ const handleUserAuthenticated = (user) => {
   
   userSession.value = user
   
-  // Redirect to home page
-  router.push('/')
+  // Redirect to original destination or home page
+  router.push(redirectTo.value)
 }
 
 // Handle new user registration flow
@@ -120,7 +124,13 @@ const handleConfigurationComplete = (user) => {
   })
   
   userSession.value = user
-  currentStep.value = 'success'
+  
+  // If redirect is specified, go there directly, otherwise show success page
+  if (redirectTo.value !== '/') {
+    router.push(redirectTo.value)
+  } else {
+    currentStep.value = 'success'
+  }
 }
 
 // Navigate to products page

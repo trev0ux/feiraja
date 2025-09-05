@@ -98,6 +98,11 @@
           <span class="font-bold text-lg text-aux-orange">R$ {{ totalPrice.toFixed(2) }}</span>
         </div>
         
+        <!-- Error Message -->
+        <div v-if="authError" class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+          <p class="text-sm text-red-600">{{ authError }}</p>
+        </div>
+        
         <div class="flex gap-2">
           <button 
             @click="clearCart"
@@ -107,9 +112,13 @@
           </button>
           <button 
             @click="goToCheckout"
-            class="flex-2 bg-aux-orange text-white py-3 px-6 rounded-lg font-semibold hover:bg-opacity-90 transition-colors"
+            :disabled="isCheckingAuth"
+            class="flex-2 bg-aux-orange text-white py-3 px-6 rounded-lg font-semibold hover:bg-opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed relative"
           >
-            Finalizar Pedido
+            <span v-if="isCheckingAuth" class="absolute left-3 top-1/2 transform -translate-y-1/2">
+              <div class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            </span>
+            {{ isCheckingAuth ? 'Verificando...' : 'Finalizar Pedido' }}
           </button>
         </div>
       </div>
@@ -133,6 +142,11 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'updateQuantity', 'clearCart'])
 const router = useRouter()
+const { apiCall } = useApi()
+
+// Authentication state
+const isCheckingAuth = ref(false)
+const authError = ref('')
 
 const closeModal = () => {
   emit('close')
@@ -148,18 +162,38 @@ const updateQuantity = (productId, newQuantity) => {
   emit('updateQuantity', { productId, quantity: newQuantity })
 }
 
-const goToCheckout = () => {
+const goToCheckout = async () => {
   if (props.basketItems.length === 0) return
   
-  emit('close')
+  isCheckingAuth.value = true
+  authError.value = ''
   
-  // Check if user has saved addresses - in real app, this would be from API/auth
-  const hasAddresses = true // Mock - in real app check localStorage/API
-  
-  if (hasAddresses) {
-    router.push('/manage-address')
-  } else {
-    router.push('/address')
+  try {
+    // Check if user is already authenticated
+    const user = useAuthUser()
+    
+    if (user.value) {
+      // User is authenticated, proceed to address/checkout
+      emit('close')
+      
+      if (user.value.hasAddresses) {
+        router.push('/manage-address')
+      } else {
+        router.push('/address')
+      }
+    } else {
+      // User needs authentication, redirect to WhatsApp login with return URL
+      emit('close')
+      router.push({
+        path: '/login',
+        query: { redirect: '/address' }
+      })
+    }
+  } catch (error) {
+    console.error('Checkout error:', error)
+    authError.value = 'Erro ao verificar autenticação. Tente novamente.'
+  } finally {
+    isCheckingAuth.value = false
   }
 }
 
