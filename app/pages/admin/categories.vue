@@ -22,7 +22,7 @@
       </div>
     </div>
 
-    <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div v-else-if="categories && categories.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       <div
         v-for="category in categories"
         :key="category.id"
@@ -60,9 +60,10 @@
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- Empty State -->
-      <div v-if="categories.length === 0" class="col-span-full text-center py-12">
+    <!-- Empty State -->
+    <div v-else class="text-center py-12">
         <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
           <svg class="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
@@ -76,7 +77,6 @@
         >
           Criar Primeira Categoria
         </button>
-      </div>
     </div>
 
     <!-- Create/Edit Modal -->
@@ -235,10 +235,13 @@ const fetchCategories = async () => {
   loading.value = true
   try {
     const { $config } = useNuxtApp()
-    categories.value = await $fetch(`${$config.public.apiBaseUrl}/api/categories`)
+    const response = await $fetch(`${$config.public.apiBaseUrl}/api/categories`)
+    categories.value = Array.isArray(response) ? response : []
     await fetchProductCounts()
   } catch (error) {
     console.error('Error fetching categories:', error)
+    categories.value = []
+    productCounts.value = {}
   } finally {
     loading.value = false
   }
@@ -251,13 +254,26 @@ const fetchProductCounts = async () => {
     const response = await $fetch(`${$config.public.apiBaseUrl}/api/products?page=1&limit=1000`)
     const counts = {}
     
-    categories.value.forEach(category => {
-      counts[category.id] = response.products.filter(p => p.categoryId === category.id).length
-    })
+    if (categories.value && Array.isArray(categories.value)) {
+      categories.value.forEach(category => {
+        // Handle different response formats
+        let products = []
+        if (response && Array.isArray(response)) {
+          products = response
+        } else if (response && response.products && Array.isArray(response.products)) {
+          products = response.products
+        } else if (response && response.data && Array.isArray(response.data)) {
+          products = response.data
+        }
+        
+        counts[category.id] = products.filter(p => p.categoryId === category.id).length
+      })
+    }
     
     productCounts.value = counts
   } catch (error) {
     console.error('Error fetching product counts:', error)
+    productCounts.value = {}
   }
 }
 

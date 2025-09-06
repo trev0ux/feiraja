@@ -223,33 +223,15 @@ const handlePhoneSubmit = async () => {
   try {
     const cleanedPhone = phoneNumber.value.replace(/\D/g, '')
     
-    // Check if user exists
-    const checkResponse = await apiCall('/api/whatsapp/check-user', {
+    // Send code directly (the backend will handle user check)
+    const codeResponse = await apiCall('/api/whatsapp/send-code', {
       method: 'POST',
       body: { phoneNumber: cleanedPhone }
     })
     
-    if (checkResponse.userExists && checkResponse.hasBasketConfiguration) {
-      // Existing user with complete profile - send code for quick login
-      const codeResponse = await apiCall('/api/whatsapp/send-code', {
-        method: 'POST',
-        body: { phoneNumber: cleanedPhone }
-      })
-      
-      whatsappLink.value = codeResponse.whatsappLink
-      currentStep.value = 'verification'
-      startTimer(codeResponse.expiresIn || 300)
-    } else {
-      // New user or incomplete profile - send code for registration
-      const codeResponse = await apiCall('/api/whatsapp/send-code', {
-        method: 'POST',
-        body: { phoneNumber: cleanedPhone }
-      })
-      
-      whatsappLink.value = codeResponse.whatsappLink
-      currentStep.value = 'verification'
-      startTimer(codeResponse.expiresIn || 300)
-    }
+    whatsappLink.value = codeResponse.whatsappLink
+    currentStep.value = 'verification'
+    startTimer(codeResponse.expiresIn || 300)
   } catch (err) {
     console.error('Phone submit error:', err)
     error.value = err.data?.error || 'Erro ao enviar código. Tente novamente.'

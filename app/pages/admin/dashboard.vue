@@ -17,7 +17,10 @@
                 Total de Produtos
               </dt>
               <dd class="text-lg font-medium text-gray-900">
-                {{ stats.totalProducts }}
+                <span v-if="loading">
+                  <div class="h-6 bg-gray-200 rounded animate-pulse w-12"></div>
+                </span>
+                <span v-else>{{ stats.totalProducts }}</span>
               </dd>
             </dl>
           </div>
@@ -198,6 +201,7 @@ definePageMeta({
   layout: 'admin'
 })
 
+const loading = ref(true)
 const stats = ref({
   totalProducts: 0,
   totalCategories: 0,
@@ -212,22 +216,99 @@ const lastLogin = ref('')
 const fetchDashboardData = async () => {
   try {
     const { $config } = useNuxtApp()
+    console.log('Fetching dashboard data from:', $config.public.apiBaseUrl)
+    
     // Fetch categories
-    const categories = await $fetch(`${$config.public.apiBaseUrl}/api/categories`)
-    stats.value.totalCategories = categories.length
+    try {
+      const categoriesResponse = await $fetch(`${$config.public.apiBaseUrl}/api/categories`)
+      console.log('Categories response:', categoriesResponse)
+      
+      let categoriesList = []
+      if (Array.isArray(categoriesResponse)) {
+        categoriesList = categoriesResponse
+      } else if (categoriesResponse && categoriesResponse.categories) {
+        categoriesList = categoriesResponse.categories
+      } else if (categoriesResponse && categoriesResponse.data) {
+        categoriesList = categoriesResponse.data
+      }
+      
+      stats.value.totalCategories = categoriesList.length
+    } catch (error) {
+      console.error('Error fetching categories for dashboard:', error)
+      stats.value.totalCategories = 0
+    }
 
     // Fetch products
-    const productsResponse = await $fetch(`${$config.public.apiBaseUrl}/api/products`)
-    stats.value.totalProducts = productsResponse.total
-    stats.value.activeProducts = productsResponse.products.filter(p => p.inStock).length
-    
-    // Get recent products (last 5)
-    recentProducts.value = productsResponse.products.slice(0, 5)
+    try {
+      const productsResponse = await $fetch(`${$config.public.apiBaseUrl}/api/products?limit=100`)
+      console.log('Products response:', productsResponse)
+      
+      let productsList = []
+      let totalProducts = 0
+      
+      if (Array.isArray(productsResponse)) {
+        productsList = productsResponse
+        totalProducts = productsResponse.length
+      } else if (productsResponse && productsResponse.products) {
+        productsList = productsResponse.products
+        totalProducts = productsResponse.total || productsResponse.products.length
+      } else if (productsResponse && productsResponse.data) {
+        productsList = productsResponse.data
+        totalProducts = productsResponse.data.length
+      }
+      
+      stats.value.totalProducts = totalProducts
+      stats.value.activeProducts = productsList.filter(p => p.inStock).length
+      
+      // Get recent products (last 5)
+      recentProducts.value = productsList.slice(0, 5).map(product => ({
+        ...product,
+        category: product.category || 'Sem categoria',
+        price: product.price || 0
+      }))
+    } catch (error) {
+      console.error('Error fetching products for dashboard:', error)
+      stats.value.totalProducts = 0
+      stats.value.activeProducts = 0
+      recentProducts.value = []
+    }
+
+    // Fetch box types
+    try {
+      const boxPricesResponse = await $fetch(`${$config.public.apiBaseUrl}/api/admin/box-prices`, {
+        headers: {
+          Authorization: `Bearer ${useCookie('admin-token').value}`
+        }
+      })
+      
+      let boxPricesList = []
+      if (Array.isArray(boxPricesResponse)) {
+        boxPricesList = boxPricesResponse
+      } else if (boxPricesResponse && boxPricesResponse.data) {
+        boxPricesList = boxPricesResponse.data
+      }
+      
+      stats.value.boxTypes = boxPricesList.length || 4
+    } catch (error) {
+      console.error('Error fetching box types for dashboard:', error)
+      stats.value.boxTypes = 4 // Default fallback
+    }
 
     // Set last login time
     lastLogin.value = new Date().toLocaleString('pt-BR')
   } catch (error) {
     console.error('Error fetching dashboard data:', error)
+    // Set default values on error
+    stats.value = {
+      totalProducts: 0,
+      totalCategories: 0,
+      activeProducts: 0,
+      boxTypes: 4
+    }
+    recentProducts.value = []
+    lastLogin.value = new Date().toLocaleString('pt-BR')
+  } finally {
+    loading.value = false
   }
 }
 

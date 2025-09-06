@@ -348,27 +348,56 @@ const fetchProducts = async () => {
     if (filters.value.category) params.append('category', filters.value.category)
 
     const { $config } = useNuxtApp()
-    const response = await $fetch(`${$config.public.apiBaseUrl}/api/products?${params}`)
+    console.log('Fetching products from:', `${$config.public.apiBaseUrl}/api/products?${params}`)
     
-    let filteredProducts = response.products
+    const response = await $fetch(`${$config.public.apiBaseUrl}/api/products?${params}`)
+    console.log('Products API response:', response)
+    
+    // Handle different response formats
+    let productsList = []
+    if (Array.isArray(response)) {
+      productsList = response
+    } else if (response && response.products) {
+      productsList = response.products
+    } else if (response && response.data) {
+      productsList = response.data
+    }
     
     // Apply status filter on frontend (since backend doesn't have this filter)
     if (filters.value.status === 'active') {
-      filteredProducts = filteredProducts.filter(p => p.inStock)
+      productsList = productsList.filter(p => p.inStock)
     } else if (filters.value.status === 'inactive') {
-      filteredProducts = filteredProducts.filter(p => !p.inStock)
+      productsList = productsList.filter(p => !p.inStock)
     }
 
-    products.value = filteredProducts
-    pagination.value = {
-      currentPage: response.page,
-      totalPages: response.totalPages,
-      total: response.total,
-      limit: response.limit
+    products.value = productsList || []
+    
+    // Handle pagination
+    if (response && typeof response === 'object' && !Array.isArray(response)) {
+      pagination.value = {
+        currentPage: response.page || 1,
+        totalPages: response.totalPages || 1,
+        total: response.total || productsList.length,
+        limit: response.limit || 20
+      }
+    } else {
+      pagination.value = {
+        currentPage: 1,
+        totalPages: 1,
+        total: productsList.length,
+        limit: 20
+      }
     }
   } catch (error) {
     console.error('Error fetching products:', error)
+    alert(`Erro ao carregar produtos: ${error.data?.error || error.message || 'Erro desconhecido'}`)
     products.value = []
+    pagination.value = {
+      currentPage: 1,
+      totalPages: 1,
+      total: 0,
+      limit: 20
+    }
   } finally {
     loading.value = false
   }
@@ -379,9 +408,27 @@ const fetchCategories = async () => {
   categoriesLoading.value = true
   try {
     const { $config } = useNuxtApp()
-    categories.value = await $fetch(`${$config.public.apiBaseUrl}/api/categories`)
+    console.log('Fetching categories from:', `${$config.public.apiBaseUrl}/api/categories`)
+    
+    const response = await $fetch(`${$config.public.apiBaseUrl}/api/categories`)
+    console.log('Categories API response:', response)
+    
+    // Handle different response formats
+    if (Array.isArray(response)) {
+      categories.value = response
+    } else if (response && response.categories) {
+      categories.value = response.categories
+    } else if (response && response.data) {
+      categories.value = response.data
+    } else {
+      categories.value = []
+    }
   } catch (error) {
     console.error('Error fetching categories:', error)
+    categories.value = []
+    if (error.status === 404 || error.statusCode === 404) {
+      console.warn('Categories endpoint not found - API might not be running')
+    }
   } finally {
     categoriesLoading.value = false
   }
