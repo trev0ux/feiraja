@@ -64,6 +64,25 @@
           </div>
         </div>
 
+        <!-- Número do WhatsApp -->
+        <div class="mb-4">
+          <label for="phoneNumber" class="block text-sm font-medium text-aux-black mb-2">
+            Número do WhatsApp *
+          </label>
+          <input
+            id="phoneNumber"
+            v-model="form.phoneNumber"
+            type="tel"
+            required
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-aux-orange focus:border-aux-orange"
+            placeholder="(11) 99999-9999"
+            @input="formatPhoneNumber"
+          />
+          <p class="text-sm text-gray-500 mt-1">
+            Você receberá um código de verificação via WhatsApp
+          </p>
+        </div>
+
         <!-- CEP -->
         <div class="mb-4">
           <label for="zipCode" class="block text-sm font-medium text-aux-black mb-2">
@@ -169,12 +188,69 @@
           :disabled="isSubmitting"
           class="w-full bg-aux-orange text-white py-3 rounded-lg font-semibold hover:bg-opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <span v-if="isSubmitting">Processando...</span>
+          <span v-if="isSubmitting">{{ isSubmitting ? 'Enviando código...' : 'Processando...' }}</span>
           <span v-else-if="isEditing">Salvar Alterações</span>
           <span v-else-if="isNewAddress">Salvar Endereço</span>
           <span v-else>Confirmar Pedido</span>
         </button>
       </form>
+
+      <!-- WhatsApp Verification Modal -->
+      <div v-if="showPhoneVerification" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+        <div class="bg-white rounded-lg shadow-lg max-w-md w-full mx-4 p-6">
+          <div class="text-center mb-6">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
+              <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+            </div>
+            <h3 class="text-lg leading-6 font-medium text-gray-900 mb-2">
+              Código Enviado!
+            </h3>
+            <p class="text-sm text-gray-500 mb-4">
+              Enviamos um código de 6 dígitos para seu WhatsApp
+              <span class="font-medium">{{ form.phoneNumber }}</span>
+            </p>
+          </div>
+
+          <div class="mb-4">
+            <label for="verificationCode" class="block text-sm font-medium text-gray-700 mb-2">
+              Digite o código
+            </label>
+            <input
+              id="verificationCode"
+              v-model="verificationCode"
+              type="text"
+              placeholder="123456"
+              maxlength="6"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg text-center text-lg font-mono tracking-widest focus:ring-2 focus:ring-aux-orange focus:border-aux-orange"
+              @input="verificationCode = verificationCode.replace(/\D/g, '').slice(0, 6)"
+            />
+          </div>
+
+          <!-- Error Message -->
+          <div v-if="verificationError" class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p class="text-sm text-red-600">{{ verificationError }}</p>
+          </div>
+
+          <div class="flex gap-3">
+            <button
+              @click="showPhoneVerification = false"
+              class="flex-1 bg-gray-100 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-200 transition-colors"
+            >
+              Voltar
+            </button>
+            <button
+              @click="verifyCodeAndCompleteOrder"
+              :disabled="isVerifyingCode || verificationCode.length !== 6"
+              class="flex-2 bg-aux-orange text-white py-3 px-6 rounded-lg font-semibold hover:bg-opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <span v-if="isVerifyingCode">Verificando...</span>
+              <span v-else>Finalizar Pedido</span>
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -193,6 +269,7 @@ const basketItems = inject('getBasketItems', () => [])()
 const form = ref({
   firstName: '',
   lastName: '',
+  phoneNumber: '',
   zipCode: '',
   address: '',
   number: '',
@@ -206,6 +283,13 @@ const isSubmitting = ref(false)
 const zipCodeError = ref('')
 const isEditing = ref(false)
 const isNewAddress = ref(false)
+
+// WhatsApp authentication state
+const showPhoneVerification = ref(false)
+const verificationCode = ref('')
+const isVerifyingCode = ref(false)
+const verificationError = ref('')
+const { apiCall } = useApi()
 
 // Check if this is edit mode or new address mode
 onMounted(() => {
@@ -259,6 +343,24 @@ const goBack = () => {
   router.back()
 }
 
+const formatPhoneNumber = () => {
+  let value = form.value.phoneNumber.replace(/\D/g, '')
+  
+  if (value.length > 11) {
+    value = value.slice(0, 11)
+  }
+  
+  if (value.length > 6) {
+    value = value.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3')
+  } else if (value.length > 2) {
+    value = value.replace(/(\d{2})(\d{0,5})/, '($1) $2')
+  } else if (value.length > 0) {
+    value = value.replace(/(\d{0,2})/, '($1')
+  }
+  
+  form.value.phoneNumber = value
+}
+
 const formatZipCode = (event) => {
   let value = event.target.value.replace(/\D/g, '')
   if (value.length >= 5) {
@@ -296,17 +398,84 @@ const fetchAddressByZipCode = async () => {
 }
 
 const submitOrder = async () => {
+  if (!form.value.phoneNumber.trim()) {
+    alert('Por favor, informe seu número de WhatsApp')
+    return
+  }
+
   isSubmitting.value = true
+  verificationError.value = ''
   
   try {
+    // First, send WhatsApp verification code
+    const cleanedPhone = form.value.phoneNumber.replace(/\D/g, '')
+    
+    // Validate phone number
+    if (cleanedPhone.length !== 11) {
+      alert('Por favor, informe um número de WhatsApp válido')
+      return
+    }
+
+    // Send verification code
+    await apiCall('/api/whatsapp/send-code', {
+      method: 'POST',
+      body: { phoneNumber: cleanedPhone }
+    })
+    
+    // Show verification step
+    showPhoneVerification.value = true
+    
+  } catch (error) {
+    console.error('Error sending verification code:', error)
+    verificationError.value = 'Erro ao enviar código. Tente novamente.'
+  } finally {
+    isSubmitting.value = false
+  }
+}
+
+const verifyCodeAndCompleteOrder = async () => {
+  if (!verificationCode.value || verificationCode.value.length !== 6) {
+    verificationError.value = 'Por favor, digite o código de 6 dígitos'
+    return
+  }
+
+  isVerifyingCode.value = true
+  verificationError.value = ''
+
+  try {
+    const cleanedPhone = form.value.phoneNumber.replace(/\D/g, '')
+    
+    // Verify the code
+    const verifyResponse = await apiCall('/api/whatsapp/verify-code', {
+      method: 'POST',
+      body: { 
+        phoneNumber: cleanedPhone,
+        code: verificationCode.value 
+      }
+    })
+
+    if (verifyResponse.success) {
+      // Now process the order with verified phone number
+      await processVerifiedOrder(verifyResponse)
+    }
+  } catch (error) {
+    console.error('Code verification error:', error)
+    verificationError.value = error.data?.error || 'Código inválido ou expirado'
+  } finally {
+    isVerifyingCode.value = false
+  }
+}
+
+const processVerifiedOrder = async (verificationResponse) => {
+  try {
     const { $config } = useNuxtApp()
-    const token = useCookie('admin-token')
     
     // Parse address back to separate fields for API
     const addressParts = form.value.address.split(', ')
     const addressData = {
       firstName: form.value.firstName,
       lastName: form.value.lastName,
+      phoneNumber: verificationResponse.phoneNumber,
       zipCode: form.value.zipCode,
       street: addressParts[0] || form.value.address,
       number: form.value.number,
@@ -319,34 +488,26 @@ const submitOrder = async () => {
     }
     
     if (isEditing.value) {
-      // Update existing address
+      // Update existing address logic
       const addressId = parseInt(route.query.edit)
       await $fetch(`${$config.public.apiBaseUrl}/api/addresses/${addressId}`, {
         method: 'PUT',
-        body: addressData,
-        headers: {
-          Authorization: `Bearer ${token.value}`,
-          'Content-Type': 'application/json'
-        }
+        body: addressData
       })
       
       alert('Endereço atualizado com sucesso!')
       router.push('/manage-address')
     } else if (isNewAddress.value) {
-      // Save new address
+      // Save new address logic
       await $fetch(`${$config.public.apiBaseUrl}/api/addresses`, {
         method: 'POST',
-        body: addressData,
-        headers: {
-          Authorization: `Bearer ${token.value}`,
-          'Content-Type': 'application/json'
-        }
+        body: addressData
       })
       
       alert('Endereço salvo com sucesso!')
       router.push('/manage-address')
     } else {
-      // Process order with new address
+      // Process order with verified phone number
       const orderData = {
         customer: addressData,
         items: basketItems.map(item => ({
@@ -355,16 +516,13 @@ const submitOrder = async () => {
           price: item.product.price
         })),
         total: totalPrice.value,
-        deliveryAddress: addressData
+        deliveryAddress: addressData,
+        phoneNumber: verificationResponse.phoneNumber
       }
       
       const response = await $fetch(`${$config.public.apiBaseUrl}/api/orders`, {
         method: 'POST',
-        body: orderData,
-        headers: {
-          Authorization: `Bearer ${token.value}`,
-          'Content-Type': 'application/json'
-        }
+        body: orderData
       })
       
       // Clear basket after successful order
@@ -375,18 +533,8 @@ const submitOrder = async () => {
       router.push('/order-confirmation')
     }
   } catch (error) {
-    console.error('Error submitting:', error)
-    
-    // Show more specific error messages
-    if (error.status === 401) {
-      alert('Sessão expirada. Faça login novamente.')
-    } else if (error.status === 400) {
-      alert('Dados inválidos. Verifique as informações e tente novamente.')
-    } else {
-      alert('Erro ao processar. Tente novamente.')
-    }
-  } finally {
-    isSubmitting.value = false
+    console.error('Error processing order:', error)
+    verificationError.value = 'Erro ao processar pedido. Tente novamente.'
   }
 }
 </script>
